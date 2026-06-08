@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Tactical Pro",
+    "category": "Trekking Gear",
+    "subcategory": "Hiking Pants",
+    "approxPrice": 1500,
+    "quantity": 1,
+    "source": "billing",
+    "lastUsedPrice": 1500,
+    "id": "59bc161c-cfb6-4ca3-aea4-166511bb7a25",
+    "timesUsed": 0,
+    "promotedToCatalogue": false,
+    "createdAt": "2026-05-18T21:48:28.863Z",
+    "updatedAt": "2026-05-18T21:48:28.863Z"
+  },
+  {
+    "name": "Synthetic woolen socks",
+    "category": "Trekking Gear",
+    "subcategory": "Accessories",
+    "approxPrice": 250,
+    "quantity": 4,
+    "source": "billing",
+    "lastUsedPrice": 250,
+    "id": "855a6863-b303-4cb5-81a8-fe715f3b9738",
+    "timesUsed": 0,
+    "promotedToCatalogue": false,
+    "createdAt": "2026-05-18T22:51:25.990Z",
+    "updatedAt": "2026-05-18T22:51:25.990Z"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "cf8dafc6-c8c9-45ef-a5ee-9f4db221a5bf",
+    "name": "seema",
+    "phone": "9773613345",
+    "totalVisits": 1,
+    "totalSpent": 1500,
+    "lastPurchaseDate": "2026-05-18T21:48:32.454Z",
+    "categoriesBought": [
+      "Trekking Gear"
+    ],
+    "salesIds": [
+      "27a0ac1b-bca4-4a36-9ea0-ab45484b2f63"
+    ],
+    "createdAt": "2026-05-18T21:48:32.455Z",
+    "updatedAt": "2026-05-18T21:48:32.455Z"
+  },
+  {
+    "id": "43511256-6bb4-4fcf-94fc-2aba0000d24d",
+    "name": "Pritam",
+    "phone": "9773431493",
+    "totalVisits": 1,
+    "totalSpent": 1500,
+    "lastPurchaseDate": "2026-05-18T21:50:37.773Z",
+    "categoriesBought": [
+      "Trekking Gear"
+    ],
+    "salesIds": [
+      "0a9c1cf0-62cb-4d78-9c9b-231f2ac28ed5"
+    ],
+    "createdAt": "2026-05-18T21:50:37.775Z",
+    "updatedAt": "2026-05-18T21:50:37.775Z"
+  },
+  {
+    "id": "c6d58694-bfe0-4e69-b9c2-6bd3019e8e71",
+    "name": "Jay",
+    "phone": "9004860291",
+    "totalVisits": 1,
+    "totalSpent": 1000,
+    "lastPurchaseDate": "2026-05-18T22:51:32.908Z",
+    "categoriesBought": [
+      "Trekking Gear"
+    ],
+    "salesIds": [
+      "1d5dad65-1eda-4206-aac2-1c56cec0a228"
+    ],
+    "createdAt": "2026-05-18T22:51:32.912Z",
+    "updatedAt": "2026-05-18T22:51:32.912Z"
+  }
+]
