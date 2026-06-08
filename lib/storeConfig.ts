@@ -32,17 +32,18 @@ export interface StoreConfig {
 export const STORE_CONFIG: StoreConfig = {
   appShortName: "Jainsons",
   themeColor: "#343c2f",
-  storeName: "Jainsons Adventure Gears and Rainwear, Frenchise Owner: Kothari Ventures",
+  storeName: "Jainsons Adventure Gears and Rainwear",
   addressLines: [
-    "Shop No. 16, Raj Shivam CHSL,Shiv Vallab Cross Road, Ashok Van",
+    "Franchise Owner: Kothari Ventures",
+    "Shop No. 16, Raj Shivam CHSL, Shiv Vallab Cross Road, Ashok Van",
     "Dahisar East, Mumbai, Maharashtra 400068",
   ],
-  storePhone: "+91 8655493340/8369132898",
+  storePhone: "+91 8655493340 / 8369132898",
   storeEmail: "", // e.g. "hello@summitgear.in" or leave empty
   footerMessage:
     "Thank you for shopping with Jainsons Adventure Gears and Rainwear. See you on the trails!",
   logoPath: "/store-logo.png", // file: public/store-logo.png → served at /store-logo.png
-  /** Max logo box on PDF (wide banners: use ~75×22; square logos: ~28×28) */
-  logoSizeMm: { width: 75, height: 22 },
+  /** Max logo box on PDF (wide banners: use ~75×22; square logos: ~28×28; enlarged: ~50x50) */
+  logoSizeMm: { width: 50, height: 50 },
   brandColorRgb: [92, 109, 78],
 };

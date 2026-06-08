@@ -37,8 +37,9 @@ function loadImageAsDataUrl(url: string): Promise<LoadedImage> {
         return;
       }
       ctx.drawImage(img, 0, 0);
+      // Convert to JPEG with quality 0.75 for small PDF size
       resolve({
-        dataUrl: canvas.toDataURL("image/png"),
+        dataUrl: canvas.toDataURL("image/jpeg", 0.75),
         width: img.naturalWidth,
         height: img.naturalHeight,
       });
@@ -80,7 +81,10 @@ export async function generateAndDownloadBill(
   data: PdfBillData
 ): Promise<void> {
   const store = STORE_CONFIG;
-  const doc = new jsPDF();
+  // Initialize with compression enabled
+  const doc = new jsPDF({
+    compress: true,
+  });
   const dateStr = format(new Date(data.createdAt), "dd MMM yyyy, hh:mm a");
   const pageW = doc.internal.pageSize.getWidth();
   const pageCenter = pageW / 2;
@@ -100,7 +104,7 @@ export async function generateAndDownloadBill(
         store.logoSizeMm.height
       );
       const logoX = (pageW - size.width) / 2;
-      doc.addImage(logo.dataUrl, "PNG", logoX, lineY, size.width, size.height);
+      doc.addImage(logo.dataUrl, "JPEG", logoX, lineY, size.width, size.height);
       lineY += size.height + 6;
       logoLoaded = true;
     } catch (err) {
@@ -108,12 +112,13 @@ export async function generateAndDownloadBill(
     }
   }
 
-  doc.setFontSize(logoLoaded ? 11 : 18);
+  // Adjust header sizes - Shop Name clean and prominent
+  doc.setFontSize(16);
   doc.setTextColor(52, 60, 47);
   doc.setFont("helvetica", "bold");
   const nameLines = doc.splitTextToSize(store.storeName, contentWidth);
   doc.text(nameLines, pageCenter, lineY, { align: "center" });
-  lineY += nameLines.length * 5 + 2;
+  lineY += nameLines.length * 6 + 2;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -121,10 +126,17 @@ export async function generateAndDownloadBill(
 
   for (const line of store.addressLines) {
     const wrapped = doc.splitTextToSize(line, contentWidth);
-    doc.text(wrapped, pageCenter, lineY, { align: "center" });
+    // Highlight franchise owner specifically if it is the first line
+    if (line.startsWith("Franchise")) {
+      doc.setFont("helvetica", "italic");
+      doc.text(wrapped, pageCenter, lineY, { align: "center" });
+      doc.setFont("helvetica", "normal");
+    } else {
+      doc.text(wrapped, pageCenter, lineY, { align: "center" });
+    }
     lineY += wrapped.length * 4 + 1;
   }
-  doc.text(store.storePhone, pageCenter, lineY, { align: "center" });
+  doc.text(`Phone: ${store.storePhone}`, pageCenter, lineY, { align: "center" });
   lineY += 5;
   if (store.storeEmail) {
     doc.text(store.storeEmail, pageCenter, lineY, { align: "center" });
@@ -134,22 +146,22 @@ export async function generateAndDownloadBill(
   lineY += 4;
   const detailsStartY = lineY;
 
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   doc.text(`Bill No: ${data.billNumber}`, leftX, detailsStartY);
-  doc.text(`Date: ${dateStr}`, leftX, detailsStartY + 7);
-  doc.text(`Customer: ${data.customerName}`, leftX, detailsStartY + 14);
-  doc.text(`Phone: ${data.customerPhone}`, leftX, detailsStartY + 21);
+  doc.text(`Date: ${dateStr}`, leftX, detailsStartY + 6);
+  doc.text(`Customer: ${data.customerName}`, leftX, detailsStartY + 12);
+  doc.text(`Phone: ${data.customerPhone}`, leftX, detailsStartY + 18);
 
   autoTable(doc, {
-    startY: detailsStartY + 28,
+    startY: detailsStartY + 24,
     head: [["Item", "Subcategory", "Qty", "Price", "Total"]],
     body: data.items.map((item) => [
       item.name,
       item.subcategory,
       String(item.quantity),
-      `₹${item.unitPrice}`,
-      `₹${item.lineTotal}`,
+      `Rs. ${item.unitPrice}`,
+      `Rs. ${item.lineTotal}`,
     ]),
     theme: "striped",
     headStyles: { fillColor: store.brandColorRgb },
@@ -159,15 +171,15 @@ export async function generateAndDownloadBill(
     (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable
       ?.finalY ?? 120;
 
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.text(`Grand Total: ₹${data.grandTotal}`, leftX, finalY + 15);
+  doc.text(`Grand Total: Rs. ${data.grandTotal}`, leftX, finalY + 12);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
+  doc.setTextColor(100, 100, 100);
   const footerLines = doc.splitTextToSize(store.footerMessage, contentWidth);
-  doc.text(footerLines, pageCenter, finalY + 30, { align: "center" });
+  doc.text(footerLines, pageCenter, finalY + 26, { align: "center" });
 
   doc.save(`${data.billNumber}.pdf`);
 }
