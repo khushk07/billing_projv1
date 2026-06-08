@@ -41,10 +41,21 @@ export function BillTable({ items, onUpdateQty, onRemove }: BillTableProps) {
                   type="number"
                   min={1}
                   className="w-16 rounded border px-2 py-1"
-                  value={item.quantity}
-                  onChange={(e) =>
-                    onUpdateQty(item.id, Math.max(1, Number(e.target.value) || 1))
-                  }
+                  value={item.quantity === 0 ? "" : item.quantity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      onUpdateQty(item.id, 0); // Allow typing by representing empty value as 0
+                    } else {
+                      const num = parseInt(val, 10);
+                      onUpdateQty(item.id, isNaN(num) ? 1 : num);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (item.quantity === 0) {
+                      onUpdateQty(item.id, 1);
+                    }
+                  }}
                 />
               </td>
               <td className="px-4 py-3">₹{item.unitPrice}</td>
