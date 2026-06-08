@@ -32,7 +32,7 @@ export function BillSummary({
         size="lg"
         onClick={onComplete}
         disabled={disabled || isSubmitting || items.length === 0}
-        className="min-h-[48px] w-full bg-white text-summit-800 hover:bg-summit-100 sm:w-auto"
+        className="min-h-[48px] w-full bg-white text-stone-900 font-bold hover:bg-stone-100 disabled:bg-stone-300 disabled:text-stone-600 sm:w-auto"
       >
         {isSubmitting ? "Processing..." : "Complete Sale"}
       </Button>

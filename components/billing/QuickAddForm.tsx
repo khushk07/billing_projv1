@@ -52,7 +52,28 @@ export function QuickAddForm({
           disabled={!category}
         />
         <Input label="Price (₹)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-        <Input label="Qty" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+        <div className="w-full">
+          <label className="mb-1 block text-sm font-medium text-stone-700">Qty</label>
+          <div className="flex items-center gap-2 mt-1">
+            <button
+              type="button"
+              className="flex h-[38px] w-[38px] items-center justify-center rounded-lg border border-stone-300 bg-white hover:bg-stone-100 active:bg-stone-200 font-bold text-stone-600 focus:outline-none"
+              onClick={() => setQuantity((q) => String(Math.max(1, (Number(q) || 1) - 1)))}
+            >
+              -
+            </button>
+            <span className="w-10 text-center font-semibold text-stone-850">
+              {quantity}
+            </span>
+            <button
+              type="button"
+              className="flex h-[38px] w-[38px] items-center justify-center rounded-lg border border-stone-300 bg-white hover:bg-stone-100 active:bg-stone-200 font-bold text-stone-600 focus:outline-none"
+              onClick={() => setQuantity((q) => String((Number(q) || 1) + 1))}
+            >
+              +
+            </button>
+          </div>
+        </div>
       </div>
       <div className="mt-2 flex gap-2">
         <Button
