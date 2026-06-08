@@ -147,8 +147,8 @@ export function ProductSearch({
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
       />
-      {open && query.trim() && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg">
+      {open && query.trim() && results.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg max-h-60 overflow-y-auto">
           {results.map((r, i) => (
             <div
               key={r.id}
@@ -200,18 +200,20 @@ export function ProductSearch({
               </div>
             </div>
           ))}
-          {showQuickAdd && (
-            <div className="p-2">
-              <QuickAddForm
-                searchQuery={query}
-                onAdd={handleQuickAdd}
-                onCancel={() => {
-                  setShowQuickAdd(false);
-                  setOpen(false);
-                }}
-              />
-            </div>
-          )}
+        </div>
+      )}
+      
+      {/* If quick add is triggered, render it statically inline rather than absolute dropdown overlay */}
+      {showQuickAdd && query.trim() && (
+        <div className="mt-3" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+          <QuickAddForm
+            searchQuery={query}
+            onAdd={handleQuickAdd}
+            onCancel={() => {
+              setShowQuickAdd(false);
+              setOpen(false);
+            }}
+          />
         </div>
       )}
     </div>
