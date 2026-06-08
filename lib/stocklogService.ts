@@ -166,21 +166,24 @@ export async function updateStockLogUsage(
   );
 
   for (const item of stocklogItems) {
-    // Fetch current times_used
+    // Fetch current times_used and quantity
     const { data: existing, error: fetchError } = await supabase
       .from(TABLE)
-      .select("times_used")
+      .select("times_used, quantity")
       .eq("id", item.sourceId!)
       .single();
 
     if (fetchError || !existing) continue;
 
     const newTimesUsed = (existing.times_used as number) + 1;
+    // Deduct quantity from stock log as well (ensuring it doesn't fall below 0)
+    const newQuantity = Math.max(0, (existing.quantity as number) - item.quantity);
 
     const { error: updateError } = await supabase
       .from(TABLE)
       .update({
         times_used: newTimesUsed,
+        quantity: newQuantity,
         last_used_price: item.unitPrice,
         updated_at: new Date().toISOString(),
       })
