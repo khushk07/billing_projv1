@@ -170,17 +170,32 @@ export function ProductSearch({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  className="w-14 rounded border px-1 py-0.5 text-sm"
-                  value={qtyMap[r.id] ?? 1}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) =>
-                    setQtyMap((m) => ({ ...m, [r.id]: Number(e.target.value) || 1 }))
-                  }
-                />
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    className="flex h-7 w-7 items-center justify-center rounded border border-stone-300 bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-xs font-bold text-stone-600 focus:outline-none"
+                    onClick={() => {
+                      const current = qtyMap[r.id] ?? 1;
+                      setQtyMap((m) => ({ ...m, [r.id]: Math.max(1, current - 1) }));
+                    }}
+                  >
+                    -
+                  </button>
+                  <span className="w-5 text-center text-xs font-semibold text-stone-800">
+                    {qtyMap[r.id] ?? 1}
+                  </span>
+                  <button
+                    type="button"
+                    className="flex h-7 w-7 items-center justify-center rounded border border-stone-300 bg-stone-50 hover:bg-stone-100 active:bg-stone-200 text-xs font-bold text-stone-600 focus:outline-none"
+                    onClick={() => {
+                      const current = qtyMap[r.id] ?? 1;
+                      setQtyMap((m) => ({ ...m, [r.id]: current + 1 }));
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
                 <span className="font-medium">₹{r.price}</span>
               </div>
             </div>

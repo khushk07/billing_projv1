@@ -37,26 +37,25 @@ export function BillTable({ items, onUpdateQty, onRemove }: BillTableProps) {
               <td className="px-4 py-3 font-medium">{item.name}</td>
               <td className="px-4 py-3 text-stone-500">{item.subcategory}</td>
               <td className="px-4 py-3">
-                <input
-                  type="number"
-                  min={1}
-                  className="w-16 rounded border px-2 py-1"
-                  value={item.quantity === 0 ? "" : item.quantity}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "") {
-                      onUpdateQty(item.id, 0); // Allow typing by representing empty value as 0
-                    } else {
-                      const num = parseInt(val, 10);
-                      onUpdateQty(item.id, isNaN(num) ? 1 : num);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (item.quantity === 0) {
-                      onUpdateQty(item.id, 1);
-                    }
-                  }}
-                />
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-stone-300 bg-stone-50 hover:bg-stone-100 active:bg-stone-200 transition-colors font-semibold text-stone-600 focus:outline-none"
+                    onClick={() => onUpdateQty(item.id, Math.max(1, item.quantity - 1))}
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-semibold text-stone-800">
+                    {item.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-stone-300 bg-stone-50 hover:bg-stone-100 active:bg-stone-200 transition-colors font-semibold text-stone-600 focus:outline-none"
+                    onClick={() => onUpdateQty(item.id, item.quantity + 1)}
+                  >
+                    +
+                  </button>
+                </div>
               </td>
               <td className="px-4 py-3">₹{item.unitPrice}</td>
               <td className="px-4 py-3 font-medium">₹{item.lineTotal}</td>
