@@ -11,6 +11,7 @@ interface ProductTableProps {
   onEdit: (product: Product) => void;
   onRestock: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onDuplicate: (product: Product) => void;
 }
 
 function stockBadge(product: Product) {
@@ -27,6 +28,7 @@ export function ProductTable({
   onEdit,
   onRestock,
   onDelete,
+  onDuplicate,
 }: ProductTableProps) {
   const filtered = products.filter((p) => {
     if (categoryFilter && p.category !== categoryFilter) return false;
@@ -69,6 +71,7 @@ export function ProductTable({
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-1">
                   <Button size="sm" variant="ghost" onClick={() => onEdit(p)}>Edit</Button>
+                  <Button size="sm" variant="secondary" onClick={() => onDuplicate(p)}>Duplicate</Button>
                   <Button size="sm" variant="secondary" onClick={() => onRestock(p)}>Restock</Button>
                   <Button size="sm" variant="danger" onClick={() => onDelete(p)}>Delete</Button>
                 </div>

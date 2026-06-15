@@ -23,6 +23,7 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [subcategoryFilter, setSubcategoryFilter] = useState("");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [duplicateProduct, setDuplicateProduct] = useState<Product | null>(null);
   const [restockProduct, setRestockProduct] = useState<Product | null>(null);
   const [restockQty, setRestockQty] = useState("");
   const [promoteEntry, setPromoteEntry] = useState<StockLogItem | null>(null);
@@ -52,6 +53,16 @@ export default function InventoryPage() {
       body: JSON.stringify(data),
     });
     setShowAddProduct(false);
+    loadProducts();
+  };
+
+  const handleDuplicateProduct = async (data: Record<string, unknown>) => {
+    await fetch("/api/inventory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    setDuplicateProduct(null);
     loadProducts();
   };
 
@@ -154,6 +165,7 @@ export default function InventoryPage() {
               categoryFilter={categoryFilter}
               subcategoryFilter={subcategoryFilter}
               onEdit={setEditProduct}
+              onDuplicate={setDuplicateProduct}
               onRestock={setRestockProduct}
               onDelete={handleDelete}
             />
@@ -210,6 +222,22 @@ export default function InventoryPage() {
             initialData={editProduct}
             onSubmit={handleUpdateProduct}
             onCancel={() => setEditProduct(null)}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={!!duplicateProduct}
+        onClose={() => setDuplicateProduct(null)}
+        title="Duplicate Product"
+        wide
+      >
+        {duplicateProduct && (
+          <ProductForm
+            initialData={duplicateProduct}
+            onSubmit={handleDuplicateProduct}
+            onCancel={() => setDuplicateProduct(null)}
+            submitLabel="Save Duplicate"
           />
         )}
       </Modal>
