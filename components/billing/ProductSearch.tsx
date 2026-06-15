@@ -14,6 +14,7 @@ interface SearchResult {
   category: string;
   price: number;
   stock?: number;
+  variant?: string;
   source: "catalogue" | "stocklog";
   sourceId: string;
 }
@@ -50,6 +51,7 @@ export function ProductSearch({
         category: p.category,
         price: p.sellingPrice,
         stock: p.stockQuantity,
+        variant: p.variant,
         source: "catalogue" as const,
         sourceId: p.id,
       }));
@@ -62,6 +64,7 @@ export function ProductSearch({
         category: e.category,
         price: e.lastUsedPrice || e.approxPrice,
         stock: e.quantity,
+        variant: e.promotedToCatalogue ? undefined : undefined, // stockLog variants aren't structured the same
         source: "stocklog" as const,
         sourceId: e.id,
       }));
@@ -83,9 +86,10 @@ export function ProductSearch({
 
   const addResult = (r: SearchResult) => {
     const qty = qtyMap[r.id] ?? 1;
+    const finalName = r.variant ? `${r.name} (${r.variant})` : r.name;
     onAddItem({
       id: uuidv4(),
-      name: r.name,
+      name: finalName,
       subcategory: r.subcategory,
       category: r.category,
       quantity: qty,
@@ -160,6 +164,11 @@ export function ProductSearch({
             >
               <div>
                 <span className="font-medium">{r.name}</span>
+                {r.variant && (
+                  <Badge variant="default" className="ml-2 bg-stone-100 text-stone-700">
+                    {r.variant}
+                  </Badge>
+                )}
                 <span className="ml-2 text-xs text-stone-500">{r.subcategory}</span>
                 <div className="mt-0.5 flex gap-1">
                   <Badge variant={r.source === "catalogue" ? "catalogue" : "stocklog"}>
@@ -200,6 +209,19 @@ export function ProductSearch({
               </div>
             </div>
           ))}
+          {/* Option to clear/cancel and close search drop-down */}
+          <div className="flex justify-end p-2 bg-stone-50 border-t border-stone-100">
+            <button
+              type="button"
+              className="px-3 py-1 text-xs font-medium text-stone-600 hover:text-stone-900 focus:outline-none"
+              onClick={() => {
+                setQuery("");
+                setOpen(false);
+              }}
+            >
+              Cancel / Close Search
+            </button>
+          </div>
         </div>
       )}
       
