@@ -34,7 +34,7 @@ export const STORE_CONFIG: StoreConfig = {
   themeColor: "#343c2f",
   storeName: "Jainsons Adventure Gears and Rainwear",
   addressLines: [
-    "Franchise Owner: Kothari Ventures",
+    "Franchise Owner: Kothari Ventures | GST No.: 27AMRPS9931K1Z0",
     "Shop No. 16, Raj Shivam CHSL, Shiv Vallab Cross Road, Ashok Van",
     "Dahisar East, Mumbai, Maharashtra 400068",
   ],
