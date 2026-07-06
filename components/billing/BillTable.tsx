@@ -6,10 +6,11 @@ import type { BillLine } from "@/types";
 interface BillTableProps {
   items: BillLine[];
   onUpdateQty: (id: string, quantity: number) => void;
+  onUpdateGst: (id: string, gstPercentage: number) => void;
   onRemove: (id: string) => void;
 }
 
-export function BillTable({ items, onUpdateQty, onRemove }: BillTableProps) {
+export function BillTable({ items, onUpdateQty, onUpdateGst, onRemove }: BillTableProps) {
   if (items.length === 0) {
     return (
       <p className="py-6 text-center text-stone-500">No items in bill yet. Search to add products.</p>
@@ -27,6 +28,7 @@ export function BillTable({ items, onUpdateQty, onRemove }: BillTableProps) {
             <th className="px-4 py-3">Subcategory</th>
             <th className="px-4 py-3">Qty</th>
             <th className="px-4 py-3">Price</th>
+            <th className="px-4 py-3">GST %</th>
             <th className="px-4 py-3">Total</th>
             <th className="px-4 py-3"></th>
           </tr>
@@ -58,6 +60,19 @@ export function BillTable({ items, onUpdateQty, onRemove }: BillTableProps) {
                 </div>
               </td>
               <td className="px-4 py-3">₹{item.unitPrice}</td>
+              <td className="px-4 py-3">
+                <select
+                  className="rounded border border-stone-300 bg-white px-2 py-1 text-xs focus:border-summit-500 focus:outline-none"
+                  value={item.gstPercentage ?? 0}
+                  onChange={(e) => onUpdateGst(item.id, Number(e.target.value))}
+                >
+                  <option value={0}>None</option>
+                  <option value={5}>5%</option>
+                  <option value={12}>12%</option>
+                  <option value={18}>18%</option>
+                  <option value={28}>28%</option>
+                </select>
+              </td>
               <td className="px-4 py-3 font-medium">₹{item.lineTotal}</td>
               <td className="px-4 py-3">
                 <Button size="sm" variant="ghost" onClick={() => onRemove(item.id)}>
@@ -69,7 +84,7 @@ export function BillTable({ items, onUpdateQty, onRemove }: BillTableProps) {
         </tbody>
         <tfoot>
           <tr className="bg-stone-50 font-bold">
-            <td colSpan={4} className="px-4 py-3 text-right">
+            <td colSpan={5} className="px-4 py-3 text-right">
               Grand Total
             </td>
             <td className="px-4 py-3">₹{grandTotal}</td>

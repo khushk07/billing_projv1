@@ -40,6 +40,7 @@ export interface BillItem {
   lineTotal: number;
   source: BillItemSource;
   sourceId?: string;
+  gstPercentage?: number;
 }
 
 export interface Sale {
@@ -76,6 +77,7 @@ export interface BillLine {
   lineTotal: number;
   source: BillItemSource;
   sourceId?: string;
+  gstPercentage?: number;
 }
 
 export interface ApiResponse<T = unknown> {

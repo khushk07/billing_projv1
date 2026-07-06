@@ -89,6 +89,16 @@ export default function NewSalePage() {
     );
   };
 
+  const updateGst = (id: string, gstPercentage: number) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? { ...i, gstPercentage }
+          : i
+      )
+    );
+  };
+
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
@@ -185,7 +195,7 @@ export default function NewSalePage() {
         onAddItem={addItem}
         onQuickAddSave={handleQuickAddSave}
       />
-      <BillTable items={items} onUpdateQty={updateQty} onRemove={removeItem} />
+      <BillTable items={items} onUpdateQty={updateQty} onUpdateGst={updateGst} onRemove={removeItem} />
       <div className="hidden lg:block">
         <BillSummary
           items={items}

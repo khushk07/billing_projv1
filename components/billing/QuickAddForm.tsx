@@ -12,6 +12,7 @@ export interface QuickAddResult {
   subcategory: string;
   price: number;
   quantity: number;
+  gstPercentage: number;
 }
 
 interface QuickAddFormProps {
@@ -30,6 +31,7 @@ export function QuickAddForm({
   const [subcategory, setSubcategory] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [gstPercentage, setGstPercentage] = useState("0");
 
   return (
     <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -52,6 +54,18 @@ export function QuickAddForm({
           disabled={!category}
         />
         <Input label="Price (₹)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Select
+          label="GST Percentage"
+          value={gstPercentage}
+          onChange={(e) => setGstPercentage(e.target.value)}
+          options={[
+            { value: "0", label: "None" },
+            { value: "5", label: "5%" },
+            { value: "12", label: "12%" },
+            { value: "18", label: "18%" },
+            { value: "28", label: "28%" },
+          ]}
+        />
         <div className="w-full">
           <label className="mb-1 block text-sm font-medium text-stone-700">Qty</label>
           <div className="flex items-center gap-2 mt-1">
@@ -85,6 +99,7 @@ export function QuickAddForm({
               subcategory,
               price: Number(price),
               quantity: Number(quantity) || 1,
+              gstPercentage: Number(gstPercentage),
             })
           }
         >

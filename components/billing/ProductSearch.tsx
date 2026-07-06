@@ -114,6 +114,7 @@ export function ProductSearch({
       lineTotal: item.price * item.quantity,
       source: "quick",
       sourceId,
+      gstPercentage: item.gstPercentage,
     });
     setShowQuickAdd(false);
     setQuery("");

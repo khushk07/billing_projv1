@@ -153,16 +153,65 @@ export async function generateAndDownloadBill(
   doc.text(`Customer: ${data.customerName}`, leftX, detailsStartY + 12);
   doc.text(`Phone: ${data.customerPhone}`, leftX, detailsStartY + 18);
 
+  // Calculate CGST and SGST splits for table and totals
+  const totalGstAmount = data.items.reduce((sum, item) => {
+    const pct = item.gstPercentage ?? 0;
+    if (pct === 0) return sum;
+    // item.lineTotal is the final selling price.
+    // basePrice + gstAmount = lineTotal -> basePrice + basePrice*(pct/100) = lineTotal -> basePrice = lineTotal / (1 + pct/100)
+    const base = item.lineTotal / (1 + pct / 100);
+    const gst = item.lineTotal - base;
+    return sum + gst;
+  }, 0);
+
+  const hasGst = data.items.some(item => (item.gstPercentage ?? 0) > 0);
+
+  // If any item has GST, we render a detailed tax invoice table
+  const tableHeaders = hasGst 
+    ? ["Item", "Subcategory", "Qty", "Base Rate", "CGST", "SGST", "Total"]
+    : ["Item", "Subcategory", "Qty", "Price", "Total"];
+
+  const tableBody = data.items.map((item) => {
+    const pct = item.gstPercentage ?? 0;
+    if (pct > 0) {
+      const baseTotal = item.lineTotal / (1 + pct / 100);
+      const baseRate = baseTotal / item.quantity;
+      const gstHalf = pct / 2;
+      const gstHalfAmt = (item.lineTotal - baseTotal) / 2;
+      return [
+        item.name,
+        item.subcategory,
+        String(item.quantity),
+        `Rs. ${baseRate.toFixed(2)}`,
+        `${gstHalf}% (Rs. ${gstHalfAmt.toFixed(2)})`,
+        `${gstHalf}% (Rs. ${gstHalfAmt.toFixed(2)})`,
+        `Rs. ${item.lineTotal.toFixed(2)}`
+      ];
+    } else {
+      return hasGst 
+        ? [
+            item.name, 
+            item.subcategory, 
+            String(item.quantity), 
+            `Rs. ${item.unitPrice.toFixed(2)}`, 
+            "0% (Rs. 0.00)", 
+            "0% (Rs. 0.00)", 
+            `Rs. ${item.lineTotal.toFixed(2)}`
+          ]
+        : [
+            item.name,
+            item.subcategory,
+            String(item.quantity),
+            `Rs. ${item.unitPrice}`,
+            `Rs. ${item.lineTotal}`,
+          ];
+    }
+  });
+
   autoTable(doc, {
     startY: detailsStartY + 24,
-    head: [["Item", "Subcategory", "Qty", "Price", "Total"]],
-    body: data.items.map((item) => [
-      item.name,
-      item.subcategory,
-      String(item.quantity),
-      `Rs. ${item.unitPrice}`,
-      `Rs. ${item.lineTotal}`,
-    ]),
+    head: [tableHeaders],
+    body: tableBody,
     theme: "striped",
     headStyles: { fillColor: store.brandColorRgb },
   });
@@ -171,15 +220,32 @@ export async function generateAndDownloadBill(
     (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable
       ?.finalY ?? 120;
 
+  let currentY = finalY + 12;
+
+  if (hasGst) {
+    const cgstTotal = totalGstAmount / 2;
+    const sgstTotal = totalGstAmount / 2;
+    const baseTotalSum = data.grandTotal - totalGstAmount;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Taxable Value (Base Price): Rs. ${baseTotalSum.toFixed(2)}`, leftX, currentY);
+    currentY += 5;
+    doc.text(`Total CGST Amount: Rs. ${cgstTotal.toFixed(2)}`, leftX, currentY);
+    currentY += 5;
+    doc.text(`Total SGST Amount: Rs. ${sgstTotal.toFixed(2)}`, leftX, currentY);
+    currentY += 8;
+  }
+
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.text(`Grand Total: Rs. ${data.grandTotal}`, leftX, finalY + 12);
+  doc.text(`Grand Total: Rs. ${data.grandTotal}`, leftX, currentY);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 100, 100);
   const footerLines = doc.splitTextToSize(store.footerMessage, contentWidth);
-  doc.text(footerLines, pageCenter, finalY + 26, { align: "center" });
+  doc.text(footerLines, pageCenter, currentY + 15, { align: "center" });
 
   doc.save(`${data.billNumber}.pdf`);
 }
