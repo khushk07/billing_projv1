@@ -7,6 +7,8 @@ declare module "jspdf-autotable" {
     body?: (string | number)[][];
     theme?: string;
     headStyles?: Record<string, unknown>;
+    styles?: Record<string, unknown>;
+    columnStyles?: Record<number, Record<string, unknown>>;
   }
 
   export default function autoTable(doc: jsPDF, options: AutoTableOptions): void;

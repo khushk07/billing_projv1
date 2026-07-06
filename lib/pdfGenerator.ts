@@ -144,21 +144,36 @@ export async function generateAndDownloadBill(
   }
 
   lineY += 4;
+  // elegant header line separator
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  lineY += 2;
+  doc.line(leftX, lineY, pageW - leftX, lineY);
+  lineY += 8;
+
   const detailsStartY = lineY;
 
+  // Render Invoice metadata (Bill Details Left, Customer Details Right)
   doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`Bill No: ${data.billNumber}`, leftX, detailsStartY);
-  doc.text(`Date: ${dateStr}`, leftX, detailsStartY + 6);
-  doc.text(`Customer: ${data.customerName}`, leftX, detailsStartY + 12);
-  doc.text(`Phone: ${data.customerPhone}`, leftX, detailsStartY + 18);
+  doc.setTextColor(50, 50, 50);
+  
+  doc.setFont("helvetica", "bold");
+  doc.text("INVOICE DETAILS", leftX, detailsStartY);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Bill No: ${data.billNumber}`, leftX, detailsStartY + 6);
+  doc.text(`Date: ${dateStr}`, leftX, detailsStartY + 12);
+
+  const rightColumnX = pageW - 80;
+  doc.setFont("helvetica", "bold");
+  doc.text("BILL TO", rightColumnX, detailsStartY);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Name: ${data.customerName}`, rightColumnX, detailsStartY + 6);
+  doc.text(`Phone: ${data.customerPhone}`, rightColumnX, detailsStartY + 12);
 
   // Calculate CGST and SGST splits for table and totals
   const totalGstAmount = data.items.reduce((sum, item) => {
     const pct = item.gstPercentage ?? 0;
     if (pct === 0) return sum;
-    // item.lineTotal is the final selling price.
-    // basePrice + gstAmount = lineTotal -> basePrice + basePrice*(pct/100) = lineTotal -> basePrice = lineTotal / (1 + pct/100)
     const base = item.lineTotal / (1 + pct / 100);
     const gst = item.lineTotal - base;
     return sum + gst;
@@ -202,18 +217,22 @@ export async function generateAndDownloadBill(
             item.name,
             item.subcategory,
             String(item.quantity),
-            `Rs. ${item.unitPrice}`,
-            `Rs. ${item.lineTotal}`,
+            `Rs. ${item.unitPrice.toFixed(2)}`,
+            `Rs. ${item.lineTotal.toFixed(2)}`,
           ];
     }
   });
 
   autoTable(doc, {
-    startY: detailsStartY + 24,
+    startY: detailsStartY + 20,
     head: [tableHeaders],
     body: tableBody,
     theme: "striped",
-    headStyles: { fillColor: store.brandColorRgb },
+    headStyles: { fillColor: store.brandColorRgb, textColor: [255, 255, 255], fontStyle: "bold" },
+    styles: { fontSize: 9 },
+    columnStyles: {
+      0: { fontStyle: "bold" }
+    }
   });
 
   const finalY =
@@ -222,30 +241,46 @@ export async function generateAndDownloadBill(
 
   let currentY = finalY + 12;
 
+  // Add subtle border above calculations
+  doc.setDrawColor(230, 230, 230);
+  doc.setLineWidth(0.5);
+  doc.line(leftX, currentY - 6, pageW - leftX, currentY - 6);
+
   if (hasGst) {
     const cgstTotal = totalGstAmount / 2;
     const sgstTotal = totalGstAmount / 2;
     const baseTotalSum = data.grandTotal - totalGstAmount;
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`Total Taxable Value (Base Price): Rs. ${baseTotalSum.toFixed(2)}`, leftX, currentY);
+    doc.setTextColor(100, 100, 100);
+    
+    doc.text("Tax Summary Breakdown:", leftX, currentY);
     currentY += 5;
-    doc.text(`Total CGST Amount: Rs. ${cgstTotal.toFixed(2)}`, leftX, currentY);
-    currentY += 5;
-    doc.text(`Total SGST Amount: Rs. ${sgstTotal.toFixed(2)}`, leftX, currentY);
-    currentY += 8;
+    
+    // CGST/SGST details columns
+    doc.text(`Taxable Amount (Base Price): Rs. ${baseTotalSum.toFixed(2)}`, leftX + 4, currentY);
+    currentY += 4.5;
+    doc.text(`Total CGST: Rs. ${cgstTotal.toFixed(2)}`, leftX + 4, currentY);
+    currentY += 4.5;
+    doc.text(`Total SGST: Rs. ${sgstTotal.toFixed(2)}`, leftX + 4, currentY);
+    currentY += 10;
   }
 
-  doc.setFontSize(13);
+  // Draw a highlighted Grand Total Section card
+  doc.setFillColor(245, 246, 244);
+  doc.rect(leftX, currentY - 6, contentWidth, 14, "F");
+  
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(`Grand Total: Rs. ${data.grandTotal}`, leftX, currentY);
+  doc.setTextColor(52, 60, 47);
+  doc.text(`GRAND TOTAL: Rs. ${data.grandTotal.toFixed(2)}`, leftX + 4, currentY + 3);
 
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
+  doc.setTextColor(120, 120, 120);
   const footerLines = doc.splitTextToSize(store.footerMessage, contentWidth);
-  doc.text(footerLines, pageCenter, currentY + 15, { align: "center" });
+  doc.text(footerLines, pageCenter, currentY + 22, { align: "center" });
 
   doc.save(`${data.billNumber}.pdf`);
 }
