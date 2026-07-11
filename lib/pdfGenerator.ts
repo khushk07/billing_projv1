@@ -91,7 +91,7 @@ export async function generateAndDownloadBill(
   const leftX = 14;
   const contentWidth = pageW - 28;
 
-  let lineY = 12;
+  let lineY = 8;
   const leftColumnX = leftX;
   const rightColumnX = pageW - leftX;
 
@@ -100,7 +100,7 @@ export async function generateAndDownloadBill(
   if (store.logoPath) {
     try {
       const logo = await loadImageAsDataUrl(store.logoPath);
-      // Fit logo inside a bounding box configured in STORE_CONFIG
+      // Fit logo inside a bounding box configured in STORE_CONFIG (now 30x10)
       const size = fitLogoSize(
         logo.width,
         logo.height,
@@ -115,16 +115,16 @@ export async function generateAndDownloadBill(
   }
 
   // 2. Draw Store Details directly below the logo on the left
-  let storeDetailsY = lineY + Math.max(logoHeight, 15) + 6;
-  doc.setFontSize(13);
+  let storeDetailsY = lineY + Math.max(logoHeight, 10) + 4;
+  doc.setFontSize(12);
   doc.setTextColor(52, 60, 47);
   doc.setFont("helvetica", "bold");
   doc.text(store.storeName, leftColumnX, storeDetailsY);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
-  storeDetailsY += 4.5;
+  storeDetailsY += 4;
 
   const filteredAddressLines = store.addressLines.filter(
     (line) => !line.toLowerCase().includes("franchise") && !line.toLowerCase().includes("gst no")
@@ -132,35 +132,35 @@ export async function generateAndDownloadBill(
 
   for (const line of filteredAddressLines) {
     doc.text(line, leftColumnX, storeDetailsY);
-    storeDetailsY += 4;
+    storeDetailsY += 3.5;
   }
   doc.text(`Phone: ${store.storePhone}`, leftColumnX, storeDetailsY);
-  storeDetailsY += 4;
+  storeDetailsY += 3.5;
   if (store.storeEmail) {
     doc.text(store.storeEmail, leftColumnX, storeDetailsY);
-    storeDetailsY += 4;
+    storeDetailsY += 3.5;
   }
 
   // 3. Draw Kothari Ventures & GST on the Right side (Top-Right)
-  let rightMetaY = lineY + 6;
-  doc.setFontSize(11);
+  let rightMetaY = lineY + 4;
+  doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
   doc.setFont("helvetica", "bold");
   doc.text("Kothari Ventures", rightColumnX, rightMetaY, { align: "right" });
   
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text("GST No.: 27AMRPS9931K1Z0", rightColumnX, rightMetaY + 5, { align: "right" });
+  doc.text("GST No.: 27AMRPS9931K1Z0", rightColumnX, rightMetaY + 4, { align: "right" });
 
   // 4. Update lineY past the tallest side block to draw the line divider
-  lineY = Math.max(storeDetailsY, rightMetaY + 12) + 2;
+  lineY = Math.max(storeDetailsY, rightMetaY + 8) + 2;
 
   // elegant header line separator
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   doc.line(leftX, lineY, pageW - leftX, lineY);
-  lineY += 8;
+  lineY += 6;
 
   const detailsStartY = lineY;
 
