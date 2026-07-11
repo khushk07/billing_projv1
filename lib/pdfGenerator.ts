@@ -91,72 +91,72 @@ export async function generateAndDownloadBill(
   const leftX = 14;
   const contentWidth = pageW - 28;
 
-  let lineY = 6;
+  let lineY = 8;
   const leftColumnX = leftX;
   const rightColumnX = pageW - leftX;
 
-  // 1. Draw Store Logo in the Top-Left corner
-  let logoHeight = 0;
+  // 1. Draw Store Logo in the Top-Left corner — tiny, inline with store name
+  let logoW = 0;
   if (store.logoPath) {
     try {
       const logo = await loadImageAsDataUrl(store.logoPath);
-      // Fit logo inside a bounding box configured in STORE_CONFIG (now 30x10)
-      const size = fitLogoSize(
-        logo.width,
-        logo.height,
-        store.logoSizeMm.width,
-        store.logoSizeMm.height
-      );
-      doc.addImage(logo.dataUrl, "JPEG", leftColumnX, lineY, size.width, size.height);
-      logoHeight = size.height;
+      // Force a very small height (8mm) and let width scale by aspect ratio
+      const aspect = logo.width / logo.height;
+      const logoH = 8;
+      logoW = logoH * aspect;
+      // Cap max width at 35mm
+      const finalW = Math.min(logoW, 35);
+      const finalH = finalW / aspect;
+      doc.addImage(logo.dataUrl, "JPEG", leftColumnX, lineY, finalW, finalH);
+      logoW = finalW;
     } catch (err) {
       console.warn("[Invoice PDF]", (err as Error).message);
+      logoW = 0;
     }
   }
 
-  // 2. Draw Store Details directly below the logo on the left
-  let storeDetailsY = lineY + logoHeight + 2;
+  // 2. Draw store name to the RIGHT of the logo on the SAME line
+  const storeTextX = leftColumnX + logoW + (logoW > 0 ? 3 : 0);
   doc.setFontSize(11);
   doc.setTextColor(52, 60, 47);
   doc.setFont("helvetica", "bold");
-  doc.text(store.storeName, leftColumnX, storeDetailsY);
-  
+  doc.text(store.storeName, storeTextX, lineY + 5);
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
-  storeDetailsY += 3.5;
 
   const filteredAddressLines = store.addressLines.filter(
     (line) => !line.toLowerCase().includes("franchise") && !line.toLowerCase().includes("gst no")
   );
 
+  let storeDetailsY = lineY + 9;
   for (const line of filteredAddressLines) {
-    doc.text(line, leftColumnX, storeDetailsY);
+    doc.text(line, storeTextX, storeDetailsY);
     storeDetailsY += 3.5;
   }
-  doc.text(`Phone: ${store.storePhone}`, leftColumnX, storeDetailsY);
+  doc.text(`Phone: ${store.storePhone}`, storeTextX, storeDetailsY);
   storeDetailsY += 3.5;
   if (store.storeEmail) {
-    doc.text(store.storeEmail, leftColumnX, storeDetailsY);
+    doc.text(store.storeEmail, storeTextX, storeDetailsY);
     storeDetailsY += 3.5;
   }
 
   // 3. Draw Kothari Ventures & GST on the Right side (Top-Right)
-  let rightMetaY = lineY + 2;
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
   doc.setFont("helvetica", "bold");
-  doc.text("Kothari Ventures", rightColumnX, rightMetaY, { align: "right" });
+  doc.text("Kothari Ventures", rightColumnX, lineY + 2, { align: "right" });
   
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text("GST No.: 27AMRPS9931K1Z0", rightColumnX, rightMetaY + 4, { align: "right" });
+  doc.text("GST No.: 27AMRPS9931K1Z0", rightColumnX, lineY + 6.5, { align: "right" });
 
-  // 4. Update lineY past the tallest side block to draw the line divider
-  lineY = Math.max(storeDetailsY, rightMetaY + 8) + 2;
+  // 4. Update lineY past the header block
+  lineY = storeDetailsY + 3;
 
-  // elegant header line separator
+  // Header line separator
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   doc.line(leftX, lineY, pageW - leftX, lineY);
