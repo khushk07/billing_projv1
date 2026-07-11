@@ -90,8 +90,7 @@ export function getAutoHsn(
   }
 
   // ── Rainwear ─────────────────────────────────────────────────
-  // User will enter HSN on the fly via product form — no auto-fill
-  // (return undefined so the DB-saved value is used as-is)
+  if (cat === "rainwear") return "62014000";
 
   return undefined;
 }
