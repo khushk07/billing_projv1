@@ -163,12 +163,15 @@ export async function generateAndDownloadBill(
   doc.text(`Bill No: ${data.billNumber}`, leftX, detailsStartY + 6);
   doc.text(`Date: ${dateStr}`, leftX, detailsStartY + 12);
 
-  const rightColumnX = pageW - 80;
+  const rightColumnX = pageW - 85;
   doc.setFont("helvetica", "bold");
   doc.text("BILL TO", rightColumnX, detailsStartY);
   doc.setFont("helvetica", "normal");
   doc.text(`Name: ${data.customerName}`, rightColumnX, detailsStartY + 6);
   doc.text(`Phone: ${data.customerPhone}`, rightColumnX, detailsStartY + 12);
+  doc.text(`Address: NA`, rightColumnX, detailsStartY + 18);
+  doc.text(`Place of supply - Maharashtra`, rightColumnX, detailsStartY + 24);
+  doc.text(`State Code - 27`, rightColumnX, detailsStartY + 30);
 
   // Calculate CGST and SGST splits for table and totals
   const totalGstAmount = data.items.reduce((sum, item) => {
@@ -182,12 +185,16 @@ export async function generateAndDownloadBill(
   const hasGst = data.items.some(item => (item.gstPercentage ?? 0) > 0);
 
   // If any item has GST, we render a detailed tax invoice table
+  // Columns: Item, Subcategory, Qty, HSN, Base Rate, CGST, SGST, Total
   const tableHeaders = hasGst 
-    ? ["Item", "Subcategory", "Qty", "Base Rate", "CGST", "SGST", "Total"]
+    ? ["Item", "Subcategory", "Qty", "HSN", "Base Rate", "CGST", "SGST", "Total"]
     : ["Item", "Subcategory", "Qty", "Price", "Total"];
 
   const tableBody = data.items.map((item) => {
     const pct = item.gstPercentage ?? 0;
+    // Static HSN values for subcategories or default to 6109
+    const hsnCode = item.subcategory.toLowerCase().includes("shoes") ? "6403" : "6109";
+    
     if (pct > 0) {
       const baseTotal = item.lineTotal / (1 + pct / 100);
       const baseRate = baseTotal / item.quantity;
@@ -197,6 +204,7 @@ export async function generateAndDownloadBill(
         item.name,
         item.subcategory,
         String(item.quantity),
+        hsnCode,
         `Rs. ${baseRate.toFixed(2)}`,
         `${gstHalf}% (Rs. ${gstHalfAmt.toFixed(2)})`,
         `${gstHalf}% (Rs. ${gstHalfAmt.toFixed(2)})`,
@@ -208,6 +216,7 @@ export async function generateAndDownloadBill(
             item.name, 
             item.subcategory, 
             String(item.quantity), 
+            hsnCode,
             `Rs. ${item.unitPrice.toFixed(2)}`, 
             "0% (Rs. 0.00)", 
             "0% (Rs. 0.00)", 
@@ -224,13 +233,22 @@ export async function generateAndDownloadBill(
   });
 
   autoTable(doc, {
-    startY: detailsStartY + 20,
+    startY: detailsStartY + 38,
     head: [tableHeaders],
     body: tableBody,
     theme: "striped",
     headStyles: { fillColor: store.brandColorRgb, textColor: [255, 255, 255], fontStyle: "bold" },
-    styles: { fontSize: 9 },
-    columnStyles: {
+    styles: { fontSize: 8.5 },
+    columnStyles: hasGst ? {
+      0: { fontStyle: "bold", cellWidth: 35 },
+      1: { cellWidth: 25 },
+      2: { cellWidth: 10 },
+      3: { cellWidth: 12 },
+      4: { cellWidth: 22 },
+      5: { cellWidth: 30 },
+      6: { cellWidth: 30 },
+      7: { cellWidth: 20 }
+    } : {
       0: { fontStyle: "bold" }
     }
   });
@@ -276,11 +294,17 @@ export async function generateAndDownloadBill(
   doc.setTextColor(52, 60, 47);
   doc.text(`GRAND TOTAL: Rs. ${data.grandTotal.toFixed(2)}`, leftX + 4, currentY + 3);
 
+  currentY += 16;
+  doc.setFontSize(9.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(50, 50, 50);
+  doc.text("Delivery mode: Counter Sale", leftX, currentY);
+
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
   const footerLines = doc.splitTextToSize(store.footerMessage, contentWidth);
-  doc.text(footerLines, pageCenter, currentY + 22, { align: "center" });
+  doc.text(footerLines, pageCenter, currentY + 12, { align: "center" });
 
   doc.save(`${data.billNumber}.pdf`);
 }
