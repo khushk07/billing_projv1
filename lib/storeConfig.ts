@@ -44,6 +44,6 @@ export const STORE_CONFIG: StoreConfig = {
     "Thank you for shopping with Jainsons Adventure Gears and Rainwear. See you on the trails!",
   logoPath: "/store-logo.png", // file: public/store-logo.png → served at /store-logo.png
   /** Max logo box on PDF (wide banners: use ~75×22; square logos: ~28×28; enlarged: ~190x120) */
-  logoSizeMm: { width: 114, height: 72 },
+  logoSizeMm: { width: 80, height: 50 },
   brandColorRgb: [92, 109, 78],
 };
