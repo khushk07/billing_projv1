@@ -100,12 +100,12 @@ export async function generateAndDownloadBill(
   if (store.logoPath) {
     try {
       const logo = await loadImageAsDataUrl(store.logoPath);
-      // Fit logo inside a bounding box (e.g. 50mm width, 25mm height)
+      // Fit logo inside a bounding box configured in STORE_CONFIG
       const size = fitLogoSize(
         logo.width,
         logo.height,
-        50,
-        25
+        store.logoSizeMm.width,
+        store.logoSizeMm.height
       );
       doc.addImage(logo.dataUrl, "JPEG", leftColumnX, lineY, size.width, size.height);
       logoHeight = size.height;
