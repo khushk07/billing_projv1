@@ -76,16 +76,23 @@ export function getAutoHsn(
   const cat = category.toLowerCase();
   const sub = subcategory.toLowerCase();
 
-  // All umbrella subcategories share the same HSN
+  // ── Umbrellas ────────────────────────────────────────────────
   if (cat === "umbrellas") return "66019900";
 
+  // ── Trekking Gear ────────────────────────────────────────────
   if (cat === "trekking gear") {
-    if (sub === "hiking bags") return "4202";
-    if (sub === "hiking shoes") return unitPrice <= 2000 ? "6404" : "6403";
-    if (sub === "accessories") return undefined; // manual entry
+    if (sub === "hiking bags")   return "4202";
+    if (sub === "winter jackets") return "62019300";
+    if (sub === "hiking pants")  return "620319";
+    if (sub === "hiking shoes")  return unitPrice <= 2000 ? "64041900" : "6403";
+    if (sub === "shirt" || sub === "t-shirt" || sub === "shirt/t-shirt") return "6105";
+    if (sub === "accessories")   return undefined; // manual entry
   }
 
-  // Rainwear, Hiking Pants, Winter Jackets, etc. → return undefined
-  // so whatever the user saved in the product form is used as-is
+  // ── Rainwear ─────────────────────────────────────────────────
+  // User will enter HSN on the fly via product form — no auto-fill
+  // (return undefined so the DB-saved value is used as-is)
+
   return undefined;
 }
+
