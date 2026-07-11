@@ -198,65 +198,91 @@ export async function generateAndDownloadBill(
   // Main items table: columns as per reference invoice format
   const tableHeaders = ["SI\nNo.", "Description of Goods", "HSN/SAC", "Quantity", "Rate", "per", "Amount"];
 
+  // Calculate overall calculations
+  const baseTotalSum = data.items.reduce((sum, item) => {
+    const pct = item.gstPercentage ?? 0;
+    const base = pct > 0 ? (item.lineTotal / (1 + pct / 100)) : item.lineTotal;
+    return sum + base;
+  }, 0);
+
+  const totalCgst = totalGstAmount / 2;
+  const totalSgst = totalGstAmount / 2;
+  
+  // Calculate rounding offset
+  const rawGrandTotal = baseTotalSum + totalGstAmount;
+  const roundedGrandTotal = Math.round(rawGrandTotal);
+  const roundingOffset = roundedGrandTotal - rawGrandTotal;
+
   // Aggregate items by HSN for the secondary HSN/SAC summary table
   const hsnSummaryMap: Record<string, { taxableValue: number; rate: number; cgstAmount: number; sgstAmount: number }> = {};
 
-  const tableBody = data.items.map((item, index) => {
+  // Formulate rows
+  const tableBody: any[] = [];
+  
+  data.items.forEach((item, index) => {
     const pct = item.gstPercentage ?? 0;
     const hsnCode = item.hsnCode || (item.subcategory.toLowerCase().includes("shoes") ? "6403" : "6109");
     const quantityStr = `${item.quantity.toFixed(2)} pcs`;
-    const rateVal = pct > 0 ? (item.lineTotal / (1 + pct / 100)) / item.quantity : item.unitPrice;
-    
+    const baseRate = pct > 0 ? (item.lineTotal / (1 + pct / 100)) / item.quantity : item.unitPrice;
+    const baseLineTotal = pct > 0 ? (item.lineTotal / (1 + pct / 100)) : item.lineTotal;
+
     // Track stats for secondary HSN tax summary table
     if (pct > 0) {
-      const baseTotal = item.lineTotal / (1 + pct / 100);
-      const gstAmt = item.lineTotal - baseTotal;
+      const gstAmt = item.lineTotal - baseLineTotal;
       if (!hsnSummaryMap[hsnCode]) {
         hsnSummaryMap[hsnCode] = { taxableValue: 0, rate: pct, cgstAmount: 0, sgstAmount: 0 };
       }
-      hsnSummaryMap[hsnCode].taxableValue += baseTotal;
+      hsnSummaryMap[hsnCode].taxableValue += baseLineTotal;
       hsnSummaryMap[hsnCode].cgstAmount += gstAmt / 2;
       hsnSummaryMap[hsnCode].sgstAmount += gstAmt / 2;
     }
 
-    if (pct > 0) {
-      const baseTotal = item.lineTotal / (1 + pct / 100);
-      const gstHalfAmt = (item.lineTotal - baseTotal) / 2;
-      
-      // Inline rows for CGST and SGST inside the item description cell
-      const descriptionLines = [
-        item.name,
-        `  CGST`,
-        `  SGST`
-      ];
-
-      const amountLines = [
-        `Rs. ${item.lineTotal.toFixed(2)}`,
-        `Rs. ${gstHalfAmt.toFixed(2)}`,
-        `Rs. ${gstHalfAmt.toFixed(2)}`
-      ];
-
-      return [
-        String(index + 1),
-        descriptionLines.join("\n"),
-        hsnCode,
-        quantityStr,
-        `Rs. ${rateVal.toFixed(2)}`,
-        "pcs",
-        amountLines.join("\n")
-      ];
-    } else {
-      return [
-        String(index + 1),
-        item.name,
-        hsnCode,
-        quantityStr,
-        `Rs. ${rateVal.toFixed(2)}`,
-        "pcs",
-        `Rs. ${item.lineTotal.toFixed(2)}`
-      ];
-    }
+    // Main item row (shows HSN, Qty, Rate, per, Base Amount)
+    tableBody.push([
+      String(index + 1),
+      item.name,
+      hsnCode,
+      quantityStr,
+      baseRate.toFixed(2),
+      "pcs",
+      baseLineTotal.toFixed(2)
+    ]);
   });
+
+  // Append empty spacer row or rows for CGST / SGST / Rounding details matching reference layout
+  if (hasGst) {
+    tableBody.push([
+      "",
+      "\n\n\n\n                       CGST\n                       SGST\nLess :             Rounding Off",
+      "",
+      "",
+      "",
+      "",
+      `\n\n\n\n${totalCgst.toFixed(2)}\n${totalSgst.toFixed(2)}\n${roundingOffset < 0 ? "(-)" : "(+)"}${Math.abs(roundingOffset).toFixed(2)}`
+    ]);
+  } else if (Math.abs(roundingOffset) > 0.001) {
+    tableBody.push([
+      "",
+      "\nLess :             Rounding Off",
+      "",
+      "",
+      "",
+      "",
+      `\n${roundingOffset < 0 ? "(-)" : "(+)"}${Math.abs(roundingOffset).toFixed(2)}`
+    ]);
+  }
+
+  // Append final total row inside the table
+  const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
+  tableBody.push([
+    "",
+    "Total",
+    "",
+    `${totalQuantity.toFixed(2)} pcs`,
+    "",
+    "",
+    `Rs. ${roundedGrandTotal.toFixed(2)}`
+  ]);
 
   autoTable(doc, {
     startY: detailsStartY + 38,
@@ -280,22 +306,7 @@ export async function generateAndDownloadBill(
     (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable
       ?.finalY ?? 120;
 
-  // Add subtle border above calculations
-  doc.setDrawColor(200, 200, 200);
-  doc.setLineWidth(0.5);
-  doc.line(leftX, finalY + 2, pageW - leftX, finalY + 2);
-  finalY += 6;
-
-  // Draw Grand Total Section card
-  doc.setFillColor(245, 246, 244);
-  doc.rect(leftX, finalY, contentWidth, 14, "F");
-  
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(52, 60, 47);
-  doc.text(`GRAND TOTAL: Rs. ${data.grandTotal.toFixed(2)}`, leftX + 4, finalY + 9);
-  
-  finalY += 20;
+  finalY += 10;
 
   // 5. Draw HSN/SAC Tax Summary Table at the bottom if hasGst
   if (hasGst && Object.keys(hsnSummaryMap).length > 0) {
