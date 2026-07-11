@@ -91,7 +91,7 @@ export async function generateAndDownloadBill(
   const leftX = 14;
   const contentWidth = pageW - 28;
 
-  let lineY = 8;
+  let lineY = 6;
   const leftColumnX = leftX;
   const rightColumnX = pageW - leftX;
 
@@ -115,8 +115,8 @@ export async function generateAndDownloadBill(
   }
 
   // 2. Draw Store Details directly below the logo on the left
-  let storeDetailsY = lineY + Math.max(logoHeight, 10) + 4;
-  doc.setFontSize(12);
+  let storeDetailsY = lineY + logoHeight + 2;
+  doc.setFontSize(11);
   doc.setTextColor(52, 60, 47);
   doc.setFont("helvetica", "bold");
   doc.text(store.storeName, leftColumnX, storeDetailsY);
@@ -124,7 +124,7 @@ export async function generateAndDownloadBill(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
-  storeDetailsY += 4;
+  storeDetailsY += 3.5;
 
   const filteredAddressLines = store.addressLines.filter(
     (line) => !line.toLowerCase().includes("franchise") && !line.toLowerCase().includes("gst no")
@@ -142,7 +142,7 @@ export async function generateAndDownloadBill(
   }
 
   // 3. Draw Kothari Ventures & GST on the Right side (Top-Right)
-  let rightMetaY = lineY + 4;
+  let rightMetaY = lineY + 2;
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
   doc.setFont("helvetica", "bold");
@@ -160,7 +160,7 @@ export async function generateAndDownloadBill(
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   doc.line(leftX, lineY, pageW - leftX, lineY);
-  lineY += 6;
+  lineY += 5;
 
   const detailsStartY = lineY;
 
