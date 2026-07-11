@@ -92,71 +92,72 @@ export async function generateAndDownloadBill(
   const contentWidth = pageW - 28;
 
   let lineY = 12;
-  let logoLoaded = false;
+  const storeX = leftX;
+  const rightColumnX = pageW - leftX;
 
-  // 1. Draw logo in the top-left corner
-  if (store.logoPath) {
-    try {
-      const logo = await loadImageAsDataUrl(store.logoPath);
-      // Fit logo to left-aligned bounding box (e.g. 50mm max width/height)
-      const size = fitLogoSize(
-        logo.width,
-        logo.height,
-        50,
-        35
-      );
-      doc.addImage(logo.dataUrl, "JPEG", leftX, lineY, size.width, size.height);
-      logoLoaded = true;
-    } catch (err) {
-      console.warn("[Invoice PDF]", (err as Error).message);
-    }
-  }
-
-  // 2. Draw "Kothari Ventures" and "GST No." in the top-right corner
-  const topRightX = pageW - leftX;
-  doc.setFontSize(11);
-  doc.setTextColor(50, 50, 50);
-  doc.setFont("helvetica", "bold");
-  doc.text("Kothari Ventures", topRightX, lineY + 6, { align: "right" });
-  
-  doc.setFontSize(9.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
-  doc.text("GST No.: 27AMRPS9931K1Z0", topRightX, lineY + 12, { align: "right" });
-
-  // 3. Move lineY down past the top header block (logo is ~35mm tall + margin)
-  lineY += 42;
-
-  // 4. Draw Shop Name and Address details centered below the header block
+  // 1. Draw Shop Details on the Left side
   doc.setFontSize(14);
   doc.setTextColor(52, 60, 47);
   doc.setFont("helvetica", "bold");
-  const nameLines = doc.splitTextToSize(store.storeName, contentWidth);
-  doc.text(nameLines, pageCenter, lineY, { align: "center" });
-  lineY += nameLines.length * 5 + 2;
-
+  const storeNameText = store.storeName;
+  doc.text(storeNameText, storeX, lineY + 4);
+  
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
-
-  // Address lines (Filter out the GST / franchise info since we printed Kothari Ventures + GST on top right)
+  
+  let storeDetailsY = lineY + 9;
+  
+  // Filter out the Kothari Ventures / GST info from standard address lines (we draw it on the right)
   const filteredAddressLines = store.addressLines.filter(
     (line) => !line.toLowerCase().includes("franchise") && !line.toLowerCase().includes("gst no")
   );
 
   for (const line of filteredAddressLines) {
-    const wrapped = doc.splitTextToSize(line, contentWidth);
-    doc.text(wrapped, pageCenter, lineY, { align: "center" });
-    lineY += wrapped.length * 4 + 1;
+    doc.text(line, storeX, storeDetailsY);
+    storeDetailsY += 4.5;
   }
-  doc.text(`Phone: ${store.storePhone}`, pageCenter, lineY, { align: "center" });
-  lineY += 5;
+  doc.text(`Phone: ${store.storePhone}`, storeX, storeDetailsY);
+  storeDetailsY += 4.5;
   if (store.storeEmail) {
-    doc.text(store.storeEmail, pageCenter, lineY, { align: "center" });
-    lineY += 5;
+    doc.text(store.storeEmail, storeX, storeDetailsY);
+    storeDetailsY += 4.5;
   }
 
-  lineY += 2;
+  // 2. Draw Logo on the Right side (top-right)
+  let logoHeight = 0;
+  if (store.logoPath) {
+    try {
+      const logo = await loadImageAsDataUrl(store.logoPath);
+      // Fit logo inside a bounding box (e.g. 60mm width, 30mm height max)
+      const size = fitLogoSize(
+        logo.width,
+        logo.height,
+        60,
+        30
+      );
+      doc.addImage(logo.dataUrl, "JPEG", rightColumnX - size.width, lineY, size.width, size.height);
+      logoHeight = size.height;
+    } catch (err) {
+      console.warn("[Invoice PDF]", (err as Error).message);
+    }
+  }
+
+  // 3. Draw Kothari Ventures & GST directly below the logo on the right
+  const rightMetaY = lineY + Math.max(logoHeight, 20) + 5;
+  doc.setFontSize(10.5);
+  doc.setTextColor(50, 50, 50);
+  doc.setFont("helvetica", "bold");
+  doc.text("Kothari Ventures", rightColumnX, rightMetaY, { align: "right" });
+  
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  doc.text("GST No.: 27AMRPS9931K1Z0", rightColumnX, rightMetaY + 4.5, { align: "right" });
+
+  // 4. Update lineY past the tallest header side block to draw the line divider
+  lineY = Math.max(storeDetailsY, rightMetaY + 10) + 2;
+
   // elegant header line separator
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
@@ -175,15 +176,15 @@ export async function generateAndDownloadBill(
   doc.text(`Bill No: ${data.billNumber}`, leftX, detailsStartY + 6);
   doc.text(`Date: ${dateStr}`, leftX, detailsStartY + 12);
 
-  const rightColumnX = pageW - 85;
+  const rightMetadataX = pageW - 85;
   doc.setFont("helvetica", "bold");
-  doc.text("BILL TO", rightColumnX, detailsStartY);
+  doc.text("BILL TO", rightMetadataX, detailsStartY);
   doc.setFont("helvetica", "normal");
-  doc.text(`Name: ${data.customerName}`, rightColumnX, detailsStartY + 6);
-  doc.text(`Phone: ${data.customerPhone}`, rightColumnX, detailsStartY + 12);
-  doc.text(`Address: NA`, rightColumnX, detailsStartY + 18);
-  doc.text(`Place of supply - Maharashtra`, rightColumnX, detailsStartY + 24);
-  doc.text(`State Code - 27`, rightColumnX, detailsStartY + 30);
+  doc.text(`Name: ${data.customerName}`, rightMetadataX, detailsStartY + 6);
+  doc.text(`Phone: ${data.customerPhone}`, rightMetadataX, detailsStartY + 12);
+  doc.text(`Address: NA`, rightMetadataX, detailsStartY + 18);
+  doc.text(`Place of supply - Maharashtra`, rightMetadataX, detailsStartY + 24);
+  doc.text(`State Code - 27`, rightMetadataX, detailsStartY + 30);
 
   // Calculate CGST and SGST splits for table and totals
   const totalGstAmount = data.items.reduce((sum, item) => {
@@ -196,51 +197,66 @@ export async function generateAndDownloadBill(
 
   const hasGst = data.items.some(item => (item.gstPercentage ?? 0) > 0);
 
-  // If any item has GST, we render a detailed tax invoice table
-  // Columns: Item, Subcategory, Qty, HSN, Base Rate, CGST, SGST, Total
-  const tableHeaders = hasGst 
-    ? ["Item", "Subcategory", "Qty", "HSN", "Base Rate", "CGST", "SGST", "Total"]
-    : ["Item", "Subcategory", "Qty", "Price", "Total"];
+  // Main items table: columns as per reference invoice format
+  const tableHeaders = ["SI\nNo.", "Description of Goods", "HSN/SAC", "Quantity", "Rate", "per", "Amount"];
 
-  const tableBody = data.items.map((item) => {
+  // Aggregate items by HSN for the secondary HSN/SAC summary table
+  const hsnSummaryMap: Record<string, { taxableValue: number; rate: number; cgstAmount: number; sgstAmount: number }> = {};
+
+  const tableBody = data.items.map((item, index) => {
     const pct = item.gstPercentage ?? 0;
-    // Read dynamic item.hsnCode if available, otherwise default to static subcategory fallback
     const hsnCode = item.hsnCode || (item.subcategory.toLowerCase().includes("shoes") ? "6403" : "6109");
+    const quantityStr = `${item.quantity.toFixed(2)} pcs`;
+    const rateVal = pct > 0 ? (item.lineTotal / (1 + pct / 100)) / item.quantity : item.unitPrice;
     
+    // Track stats for secondary HSN tax summary table
     if (pct > 0) {
       const baseTotal = item.lineTotal / (1 + pct / 100);
-      const baseRate = baseTotal / item.quantity;
-      const gstHalf = pct / 2;
+      const gstAmt = item.lineTotal - baseTotal;
+      if (!hsnSummaryMap[hsnCode]) {
+        hsnSummaryMap[hsnCode] = { taxableValue: 0, rate: pct, cgstAmount: 0, sgstAmount: 0 };
+      }
+      hsnSummaryMap[hsnCode].taxableValue += baseTotal;
+      hsnSummaryMap[hsnCode].cgstAmount += gstAmt / 2;
+      hsnSummaryMap[hsnCode].sgstAmount += gstAmt / 2;
+    }
+
+    if (pct > 0) {
+      const baseTotal = item.lineTotal / (1 + pct / 100);
       const gstHalfAmt = (item.lineTotal - baseTotal) / 2;
-      return [
+      
+      // Inline rows for CGST and SGST inside the item description cell
+      const descriptionLines = [
         item.name,
-        item.subcategory,
-        String(item.quantity),
+        `  CGST`,
+        `  SGST`
+      ];
+
+      const amountLines = [
+        `Rs. ${item.lineTotal.toFixed(2)}`,
+        `Rs. ${gstHalfAmt.toFixed(2)}`,
+        `Rs. ${gstHalfAmt.toFixed(2)}`
+      ];
+
+      return [
+        String(index + 1),
+        descriptionLines.join("\n"),
         hsnCode,
-        `Rs. ${baseRate.toFixed(2)}`,
-        `${gstHalf}% (Rs. ${gstHalfAmt.toFixed(2)})`,
-        `${gstHalf}% (Rs. ${gstHalfAmt.toFixed(2)})`,
-        `Rs. ${item.lineTotal.toFixed(2)}`
+        quantityStr,
+        `Rs. ${rateVal.toFixed(2)}`,
+        "pcs",
+        amountLines.join("\n")
       ];
     } else {
-      return hasGst 
-        ? [
-            item.name, 
-            item.subcategory, 
-            String(item.quantity), 
-            hsnCode,
-            `Rs. ${item.unitPrice.toFixed(2)}`, 
-            "0% (Rs. 0.00)", 
-            "0% (Rs. 0.00)", 
-            `Rs. ${item.lineTotal.toFixed(2)}`
-          ]
-        : [
-            item.name,
-            item.subcategory,
-            String(item.quantity),
-            `Rs. ${item.unitPrice.toFixed(2)}`,
-            `Rs. ${item.lineTotal.toFixed(2)}`,
-          ];
+      return [
+        String(index + 1),
+        item.name,
+        hsnCode,
+        quantityStr,
+        `Rs. ${rateVal.toFixed(2)}`,
+        "pcs",
+        `Rs. ${item.lineTotal.toFixed(2)}`
+      ];
     }
   });
 
@@ -251,72 +267,98 @@ export async function generateAndDownloadBill(
     theme: "striped",
     headStyles: { fillColor: store.brandColorRgb, textColor: [255, 255, 255], fontStyle: "bold" },
     styles: { fontSize: 8.5 },
-    columnStyles: hasGst ? {
-      0: { fontStyle: "bold", cellWidth: 35 },
-      1: { cellWidth: 25 },
-      2: { cellWidth: 10 },
-      3: { cellWidth: 12 },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { fontStyle: "bold", cellWidth: 70 },
+      2: { cellWidth: 20 },
+      3: { cellWidth: 20 },
       4: { cellWidth: 22 },
-      5: { cellWidth: 30 },
-      6: { cellWidth: 30 },
-      7: { cellWidth: 20 }
-    } : {
-      0: { fontStyle: "bold" }
+      5: { cellWidth: 12 },
+      6: { cellWidth: 28 }
     }
   });
 
-  const finalY =
+  let finalY =
     (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable
       ?.finalY ?? 120;
 
-  let currentY = finalY + 12;
-
   // Add subtle border above calculations
-  doc.setDrawColor(230, 230, 230);
+  doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  doc.line(leftX, currentY - 6, pageW - leftX, currentY - 6);
+  doc.line(leftX, finalY + 2, pageW - leftX, finalY + 2);
+  finalY += 6;
 
-  if (hasGst) {
-    const cgstTotal = totalGstAmount / 2;
-    const sgstTotal = totalGstAmount / 2;
-    const baseTotalSum = data.grandTotal - totalGstAmount;
-
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    
-    doc.text("Tax Summary Breakdown:", leftX, currentY);
-    currentY += 5;
-    
-    // CGST/SGST details columns
-    doc.text(`Taxable Amount (Base Price): Rs. ${baseTotalSum.toFixed(2)}`, leftX + 4, currentY);
-    currentY += 4.5;
-    doc.text(`Total CGST: Rs. ${cgstTotal.toFixed(2)}`, leftX + 4, currentY);
-    currentY += 4.5;
-    doc.text(`Total SGST: Rs. ${sgstTotal.toFixed(2)}`, leftX + 4, currentY);
-    currentY += 10;
-  }
-
-  // Draw a highlighted Grand Total Section card
+  // Draw Grand Total Section card
   doc.setFillColor(245, 246, 244);
-  doc.rect(leftX, currentY - 6, contentWidth, 14, "F");
+  doc.rect(leftX, finalY, contentWidth, 14, "F");
   
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(52, 60, 47);
-  doc.text(`GRAND TOTAL: Rs. ${data.grandTotal.toFixed(2)}`, leftX + 4, currentY + 3);
+  doc.text(`GRAND TOTAL: Rs. ${data.grandTotal.toFixed(2)}`, leftX + 4, finalY + 9);
+  
+  finalY += 20;
 
-  currentY += 16;
+  // 5. Draw HSN/SAC Tax Summary Table at the bottom if hasGst
+  if (hasGst && Object.keys(hsnSummaryMap).length > 0) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(50, 50, 50);
+    doc.text("Tax Summary Breakdown (HSN/SAC summary):", leftX, finalY);
+    finalY += 4;
+
+    const summaryHeaders = ["HSN/SAC", "Taxable Value", "CGST Rate", "CGST Amount", "SGST Rate", "SGST Amount", "Total Tax"];
+    const summaryBody = Object.entries(hsnSummaryMap).map(([hsn, data]) => {
+      const totalTax = data.cgstAmount + data.sgstAmount;
+      const cgstRate = `${(data.rate / 2)}%`;
+      const sgstRate = `${(data.rate / 2)}%`;
+      return [
+        hsn,
+        `Rs. ${data.taxableValue.toFixed(2)}`,
+        cgstRate,
+        `Rs. ${data.cgstAmount.toFixed(2)}`,
+        sgstRate,
+        `Rs. ${data.sgstAmount.toFixed(2)}`,
+        `Rs. ${totalTax.toFixed(2)}`
+      ];
+    });
+
+    // Calculate totals for HSN table footer
+    const totalsRow = [
+      "Total",
+      `Rs. ${Object.values(hsnSummaryMap).reduce((sum, d) => sum + d.taxableValue, 0).toFixed(2)}`,
+      "",
+      `Rs. ${Object.values(hsnSummaryMap).reduce((sum, d) => sum + d.cgstAmount, 0).toFixed(2)}`,
+      "",
+      `Rs. ${Object.values(hsnSummaryMap).reduce((sum, d) => sum + d.sgstAmount, 0).toFixed(2)}`,
+      `Rs. ${Object.values(hsnSummaryMap).reduce((sum, d) => sum + d.cgstAmount + d.sgstAmount, 0).toFixed(2)}`
+    ];
+
+    summaryBody.push(totalsRow);
+
+    autoTable(doc, {
+      startY: finalY,
+      head: [summaryHeaders],
+      body: summaryBody,
+      theme: "striped",
+      headStyles: { fillColor: [110, 110, 110], textColor: [255, 255, 255] },
+      styles: { fontSize: 7.5 },
+    });
+
+    finalY = (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? (finalY + 30);
+    finalY += 10;
+  }
+
   doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(50, 50, 50);
-  doc.text("Delivery mode: Counter Sale", leftX, currentY);
+  doc.text("Delivery mode: Counter Sale", leftX, finalY);
 
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
   const footerLines = doc.splitTextToSize(store.footerMessage, contentWidth);
-  doc.text(footerLines, pageCenter, currentY + 12, { align: "center" });
+  doc.text(footerLines, pageCenter, finalY + 12, { align: "center" });
 
   doc.save(`${data.billNumber}.pdf`);
 }
