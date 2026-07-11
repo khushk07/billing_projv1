@@ -37,11 +37,53 @@ function loadImageAsDataUrl(url: string): Promise<LoadedImage> {
         return;
       }
       ctx.drawImage(img, 0, 0);
-      // Convert to JPEG with quality 0.75 for small PDF size
+
+      // ── Auto-crop whitespace / transparent padding ──
+      const { width, height } = canvas;
+      const pixels = ctx.getImageData(0, 0, width, height);
+      const d = pixels.data;
+
+      let minX = width, minY = height, maxX = 0, maxY = 0;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          const r = d[idx], g = d[idx + 1], b = d[idx + 2], a = d[idx + 3];
+          // Consider a pixel "content" if it is not fully transparent and not near-white
+          const isContent = a > 30 && !(r > 240 && g > 240 && b > 240);
+          if (isContent) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      // Add a small padding around the detected content
+      const pad = 4;
+      minX = Math.max(0, minX - pad);
+      minY = Math.max(0, minY - pad);
+      maxX = Math.min(width - 1, maxX + pad);
+      maxY = Math.min(height - 1, maxY + pad);
+
+      const cropW = maxX - minX + 1;
+      const cropH = maxY - minY + 1;
+
+      // Draw just the cropped region onto a new smaller canvas
+      const cropped = document.createElement("canvas");
+      cropped.width = cropW;
+      cropped.height = cropH;
+      const cCtx = cropped.getContext("2d");
+      if (!cCtx) {
+        reject(new Error("Could not crop logo"));
+        return;
+      }
+      cCtx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+
       resolve({
-        dataUrl: canvas.toDataURL("image/jpeg", 0.75),
-        width: img.naturalWidth,
-        height: img.naturalHeight,
+        dataUrl: cropped.toDataURL("image/png"),
+        width: cropW,
+        height: cropH,
       });
     };
     img.onerror = () =>
@@ -53,6 +95,7 @@ function loadImageAsDataUrl(url: string): Promise<LoadedImage> {
     img.src = url;
   });
 }
+
 
 /**
  * Fits logo inside max box while keeping aspect ratio.
@@ -95,25 +138,26 @@ export async function generateAndDownloadBill(
   const leftColumnX = leftX;
   const rightColumnX = pageW - leftX;
 
-  // 1. Draw Store Logo in the Top-Left corner — tiny, inline with store name
+  // 1. Draw Store Logo in the Top-Left corner — inline with store name
   let logoW = 0;
   if (store.logoPath) {
     try {
       const logo = await loadImageAsDataUrl(store.logoPath);
-      // Force a very small height (8mm) and let width scale by aspect ratio
+      // Whitespace is auto-cropped, so 16mm height = actual logo artwork height
       const aspect = logo.width / logo.height;
-      const logoH = 8;
-      logoW = logoH * aspect;
-      // Cap max width at 35mm
-      const finalW = Math.min(logoW, 35);
+      const logoH = 16;
+      const rawW = logoH * aspect;
+      // Cap max width at 40mm
+      const finalW = Math.min(rawW, 40);
       const finalH = finalW / aspect;
-      doc.addImage(logo.dataUrl, "JPEG", leftColumnX, lineY, finalW, finalH);
+      doc.addImage(logo.dataUrl, "PNG", leftColumnX, lineY, finalW, finalH);
       logoW = finalW;
     } catch (err) {
       console.warn("[Invoice PDF]", (err as Error).message);
       logoW = 0;
     }
   }
+
 
   // 2. Draw store name to the RIGHT of the logo on the SAME line
   const storeTextX = leftColumnX + logoW + (logoW > 0 ? 3 : 0);
