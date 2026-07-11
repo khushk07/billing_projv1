@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { getAutoHsn } from "@/lib/categories";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CustomerLookup } from "@/components/billing/CustomerLookup";
@@ -76,7 +77,11 @@ export default function NewSalePage() {
   }, [phone]);
 
   const addItem = (line: BillLine) => {
-    setItems((prev) => [...prev, line]);
+    // Auto-fill HSN if not already set from the product DB record
+    const autoHsn = !line.hsnCode
+      ? getAutoHsn(line.category, line.subcategory, line.unitPrice)
+      : undefined;
+    setItems((prev) => [...prev, { ...line, hsnCode: line.hsnCode ?? autoHsn }]);
   };
 
   const updateQty = (id: string, quantity: number) => {

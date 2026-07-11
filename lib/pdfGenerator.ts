@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { STORE_CONFIG } from "@/lib/storeConfig";
+import { getAutoHsn } from "@/lib/categories";
 import type { BillItem, Sale } from "@/types";
 import { format } from "date-fns";
 
@@ -265,7 +266,12 @@ export async function generateAndDownloadBill(
   
   data.items.forEach((item, index) => {
     const pct = item.gstPercentage ?? 0;
-    const hsnCode = item.hsnCode || (item.subcategory.toLowerCase().includes("shoes") ? "6403" : "6109");
+    // Use HSN already on the item (set by user or auto-filled at billing time).
+    // Fall back to getAutoHsn() in case older records don't have it saved.
+    const hsnCode =
+      item.hsnCode ||
+      getAutoHsn(item.category, item.subcategory, item.unitPrice) ||
+      "—";
     const quantityStr = `${item.quantity.toFixed(2)} pcs`;
     const baseRate = pct > 0 ? (item.lineTotal / (1 + pct / 100)) / item.quantity : item.unitPrice;
     const baseLineTotal = pct > 0 ? (item.lineTotal / (1 + pct / 100)) : item.lineTotal;
