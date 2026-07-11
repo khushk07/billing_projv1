@@ -94,46 +94,59 @@ export async function generateAndDownloadBill(
   let lineY = 12;
   let logoLoaded = false;
 
+  // 1. Draw logo in the top-left corner
   if (store.logoPath) {
     try {
       const logo = await loadImageAsDataUrl(store.logoPath);
+      // Fit logo to left-aligned bounding box (e.g. 50mm max width/height)
       const size = fitLogoSize(
         logo.width,
         logo.height,
-        store.logoSizeMm.width,
-        store.logoSizeMm.height
+        50,
+        35
       );
-      const logoX = (pageW - size.width) / 2;
-      doc.addImage(logo.dataUrl, "JPEG", logoX, lineY, size.width, size.height);
-      lineY += size.height + 6;
+      doc.addImage(logo.dataUrl, "JPEG", leftX, lineY, size.width, size.height);
       logoLoaded = true;
     } catch (err) {
       console.warn("[Invoice PDF]", (err as Error).message);
     }
   }
 
-  // Adjust header sizes - Shop Name clean and prominent
-  doc.setFontSize(16);
+  // 2. Draw "Kothari Ventures" and "GST No." in the top-right corner
+  const topRightX = pageW - leftX;
+  doc.setFontSize(11);
+  doc.setTextColor(50, 50, 50);
+  doc.setFont("helvetica", "bold");
+  doc.text("Kothari Ventures", topRightX, lineY + 6, { align: "right" });
+  
+  doc.setFontSize(9.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  doc.text("GST No.: 27AMRPS9931K1Z0", topRightX, lineY + 12, { align: "right" });
+
+  // 3. Move lineY down past the top header block (logo is ~35mm tall + margin)
+  lineY += 42;
+
+  // 4. Draw Shop Name and Address details centered below the header block
+  doc.setFontSize(14);
   doc.setTextColor(52, 60, 47);
   doc.setFont("helvetica", "bold");
   const nameLines = doc.splitTextToSize(store.storeName, contentWidth);
   doc.text(nameLines, pageCenter, lineY, { align: "center" });
-  lineY += nameLines.length * 6 + 2;
+  lineY += nameLines.length * 5 + 2;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
 
-  for (const line of store.addressLines) {
+  // Address lines (Filter out the GST / franchise info since we printed Kothari Ventures + GST on top right)
+  const filteredAddressLines = store.addressLines.filter(
+    (line) => !line.toLowerCase().includes("franchise") && !line.toLowerCase().includes("gst no")
+  );
+
+  for (const line of filteredAddressLines) {
     const wrapped = doc.splitTextToSize(line, contentWidth);
-    // Highlight franchise owner specifically if it is the first line
-    if (line.startsWith("Franchise")) {
-      doc.setFont("helvetica", "italic");
-      doc.text(wrapped, pageCenter, lineY, { align: "center" });
-      doc.setFont("helvetica", "normal");
-    } else {
-      doc.text(wrapped, pageCenter, lineY, { align: "center" });
-    }
+    doc.text(wrapped, pageCenter, lineY, { align: "center" });
     lineY += wrapped.length * 4 + 1;
   }
   doc.text(`Phone: ${store.storePhone}`, pageCenter, lineY, { align: "center" });
@@ -143,11 +156,10 @@ export async function generateAndDownloadBill(
     lineY += 5;
   }
 
-  lineY += 4;
+  lineY += 2;
   // elegant header line separator
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  lineY += 2;
   doc.line(leftX, lineY, pageW - leftX, lineY);
   lineY += 8;
 
