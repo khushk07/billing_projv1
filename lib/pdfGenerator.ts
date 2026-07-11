@@ -92,60 +92,58 @@ export async function generateAndDownloadBill(
   const contentWidth = pageW - 28;
 
   let lineY = 12;
-  const storeX = leftX;
+  const leftColumnX = leftX;
   const rightColumnX = pageW - leftX;
 
-  // 1. Draw Shop Details on the Left side
-  doc.setFontSize(14);
-  doc.setTextColor(52, 60, 47);
-  doc.setFont("helvetica", "bold");
-  const storeNameText = store.storeName;
-  doc.text(storeNameText, storeX, lineY + 4);
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  
-  let storeDetailsY = lineY + 9;
-  
-  // Filter out the Kothari Ventures / GST info from standard address lines (we draw it on the right)
-  const filteredAddressLines = store.addressLines.filter(
-    (line) => !line.toLowerCase().includes("franchise") && !line.toLowerCase().includes("gst no")
-  );
-
-  for (const line of filteredAddressLines) {
-    doc.text(line, storeX, storeDetailsY);
-    storeDetailsY += 4.5;
-  }
-  doc.text(`Phone: ${store.storePhone}`, storeX, storeDetailsY);
-  storeDetailsY += 4.5;
-  if (store.storeEmail) {
-    doc.text(store.storeEmail, storeX, storeDetailsY);
-    storeDetailsY += 4.5;
-  }
-
-  // 2. Draw Logo on the Right side (top-right)
+  // 1. Draw Store Logo in the Top-Left corner
   let logoHeight = 0;
   if (store.logoPath) {
     try {
       const logo = await loadImageAsDataUrl(store.logoPath);
-      // Fit logo inside a bounding box (e.g. 60mm width, 30mm height max)
+      // Fit logo inside a bounding box (e.g. 50mm width, 25mm height)
       const size = fitLogoSize(
         logo.width,
         logo.height,
-        60,
-        30
+        50,
+        25
       );
-      doc.addImage(logo.dataUrl, "JPEG", rightColumnX - size.width, lineY, size.width, size.height);
+      doc.addImage(logo.dataUrl, "JPEG", leftColumnX, lineY, size.width, size.height);
       logoHeight = size.height;
     } catch (err) {
       console.warn("[Invoice PDF]", (err as Error).message);
     }
   }
 
-  // 3. Draw Kothari Ventures & GST directly below the logo on the right
-  const rightMetaY = lineY + Math.max(logoHeight, 20) + 5;
-  doc.setFontSize(10.5);
+  // 2. Draw Store Details directly below the logo on the left
+  let storeDetailsY = lineY + Math.max(logoHeight, 15) + 6;
+  doc.setFontSize(13);
+  doc.setTextColor(52, 60, 47);
+  doc.setFont("helvetica", "bold");
+  doc.text(store.storeName, leftColumnX, storeDetailsY);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(80, 80, 80);
+  storeDetailsY += 4.5;
+
+  const filteredAddressLines = store.addressLines.filter(
+    (line) => !line.toLowerCase().includes("franchise") && !line.toLowerCase().includes("gst no")
+  );
+
+  for (const line of filteredAddressLines) {
+    doc.text(line, leftColumnX, storeDetailsY);
+    storeDetailsY += 4;
+  }
+  doc.text(`Phone: ${store.storePhone}`, leftColumnX, storeDetailsY);
+  storeDetailsY += 4;
+  if (store.storeEmail) {
+    doc.text(store.storeEmail, leftColumnX, storeDetailsY);
+    storeDetailsY += 4;
+  }
+
+  // 3. Draw Kothari Ventures & GST on the Right side (Top-Right)
+  let rightMetaY = lineY + 6;
+  doc.setFontSize(11);
   doc.setTextColor(50, 50, 50);
   doc.setFont("helvetica", "bold");
   doc.text("Kothari Ventures", rightColumnX, rightMetaY, { align: "right" });
@@ -153,10 +151,10 @@ export async function generateAndDownloadBill(
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text("GST No.: 27AMRPS9931K1Z0", rightColumnX, rightMetaY + 4.5, { align: "right" });
+  doc.text("GST No.: 27AMRPS9931K1Z0", rightColumnX, rightMetaY + 5, { align: "right" });
 
-  // 4. Update lineY past the tallest header side block to draw the line divider
-  lineY = Math.max(storeDetailsY, rightMetaY + 10) + 2;
+  // 4. Update lineY past the tallest side block to draw the line divider
+  lineY = Math.max(storeDetailsY, rightMetaY + 12) + 2;
 
   // elegant header line separator
   doc.setDrawColor(200, 200, 200);
