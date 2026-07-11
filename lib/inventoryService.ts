@@ -16,6 +16,8 @@ function toProduct(row: Record<string, unknown>): Product {
     lowStockThreshold: row.low_stock_threshold as number,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    hsnCode: (row.hsn_code as string) ?? undefined,
+    gstPercentage: (row.gst_percentage as number) ?? undefined,
   };
 }
 
@@ -34,6 +36,8 @@ function toDbFields(
   if (input.stockQuantity !== undefined) map.stock_quantity = input.stockQuantity;
   if (input.lowStockThreshold !== undefined)
     map.low_stock_threshold = input.lowStockThreshold;
+  if (input.hsnCode !== undefined) map.hsn_code = input.hsnCode;
+  if (input.gstPercentage !== undefined) map.gst_percentage = input.gstPercentage;
   return map;
 }
 
@@ -66,6 +70,8 @@ export async function addProduct(
       selling_price: input.sellingPrice,
       stock_quantity: input.stockQuantity,
       low_stock_threshold: input.lowStockThreshold ?? 5,
+      hsn_code: input.hsnCode ?? null,
+      gst_percentage: input.gstPercentage ?? null,
       created_at: now,
       updated_at: now,
     })

@@ -99,6 +99,16 @@ export default function NewSalePage() {
     );
   };
 
+  const updateHsn = (id: string, hsnCode: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? { ...i, hsnCode }
+          : i
+      )
+    );
+  };
+
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
@@ -195,7 +205,7 @@ export default function NewSalePage() {
         onAddItem={addItem}
         onQuickAddSave={handleQuickAddSave}
       />
-      <BillTable items={items} onUpdateQty={updateQty} onUpdateGst={updateGst} onRemove={removeItem} />
+      <BillTable items={items} onUpdateQty={updateQty} onUpdateGst={updateGst} onUpdateHsn={updateHsn} onRemove={removeItem} />
       <div className="hidden lg:block">
         <BillSummary
           items={items}

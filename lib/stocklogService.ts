@@ -20,6 +20,8 @@ function toStockLogItem(row: Record<string, unknown>): StockLogItem {
     promotedToCatalogue: row.promoted_to_catalogue as boolean,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    hsnCode: (row.hsn_code as string) ?? undefined,
+    gstPercentage: (row.gst_percentage as number) ?? undefined,
   };
 }
 
@@ -33,6 +35,8 @@ function toDbInsert(input: {
   source: StockLogSource | string;
   lastUsedPrice?: number;
   timesUsed?: number;
+  hsnCode?: string;
+  gstPercentage?: number;
 }): Record<string, unknown> {
   return {
     name: input.name,
@@ -44,6 +48,8 @@ function toDbInsert(input: {
     last_used_price: input.lastUsedPrice ?? input.approxPrice,
     times_used: input.timesUsed ?? 0,
     promoted_to_catalogue: false,
+    hsn_code: input.hsnCode ?? null,
+    gst_percentage: input.gstPercentage ?? null,
   };
 }
 

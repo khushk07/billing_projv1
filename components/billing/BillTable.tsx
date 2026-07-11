@@ -7,10 +7,11 @@ interface BillTableProps {
   items: BillLine[];
   onUpdateQty: (id: string, quantity: number) => void;
   onUpdateGst: (id: string, gstPercentage: number) => void;
+  onUpdateHsn: (id: string, hsnCode: string) => void;
   onRemove: (id: string) => void;
 }
 
-export function BillTable({ items, onUpdateQty, onUpdateGst, onRemove }: BillTableProps) {
+export function BillTable({ items, onUpdateQty, onUpdateGst, onUpdateHsn, onRemove }: BillTableProps) {
   if (items.length === 0) {
     return (
       <p className="py-6 text-center text-stone-500">No items in bill yet. Search to add products.</p>
@@ -27,6 +28,7 @@ export function BillTable({ items, onUpdateQty, onUpdateGst, onRemove }: BillTab
             <th className="px-4 py-3">Item</th>
             <th className="px-4 py-3">Subcategory</th>
             <th className="px-4 py-3">Qty</th>
+            <th className="px-4 py-3">HSN Code</th>
             <th className="px-4 py-3">Price</th>
             <th className="px-4 py-3">GST %</th>
             <th className="px-4 py-3">Total</th>
@@ -59,6 +61,15 @@ export function BillTable({ items, onUpdateQty, onUpdateGst, onRemove }: BillTab
                   </button>
                 </div>
               </td>
+              <td className="px-4 py-3">
+                <input
+                  type="text"
+                  placeholder="e.g. 6109"
+                  className="w-20 rounded border border-stone-300 px-2 py-1 text-xs focus:border-summit-500 focus:outline-none"
+                  value={item.hsnCode ?? ""}
+                  onChange={(e) => onUpdateHsn(item.id, e.target.value)}
+                />
+              </td>
               <td className="px-4 py-3">₹{item.unitPrice}</td>
               <td className="px-4 py-3">
                 <select
@@ -84,7 +95,7 @@ export function BillTable({ items, onUpdateQty, onUpdateGst, onRemove }: BillTab
         </tbody>
         <tfoot>
           <tr className="bg-stone-50 font-bold">
-            <td colSpan={5} className="px-4 py-3 text-right">
+            <td colSpan={6} className="px-4 py-3 text-right">
               Grand Total
             </td>
             <td className="px-4 py-3">₹{grandTotal}</td>

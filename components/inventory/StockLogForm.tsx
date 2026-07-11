@@ -16,6 +16,8 @@ export function StockLogForm({ onSubmit }: StockLogFormProps) {
   const [subcategory, setSubcategory] = useState("");
   const [approxPrice, setApproxPrice] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [hsnCode, setHsnCode] = useState("");
+  const [gstPercentage, setGstPercentage] = useState("0");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,10 +31,14 @@ export function StockLogForm({ onSubmit }: StockLogFormProps) {
         approxPrice: Number(approxPrice),
         quantity: Number(quantity),
         source: "manual",
+        hsnCode: hsnCode || undefined,
+        gstPercentage: Number(gstPercentage),
       });
       setName("");
       setApproxPrice("");
       setQuantity("");
+      setHsnCode("");
+      setGstPercentage("0");
     } finally {
       setLoading(false);
     }
@@ -60,6 +66,19 @@ export function StockLogForm({ onSubmit }: StockLogFormProps) {
       />
       <Input label="Approx Price (₹)" type="number" min="0" value={approxPrice} onChange={(e) => setApproxPrice(e.target.value)} required />
       <Input label="Quantity" type="number" min="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
+      <Input label="HSN Code (optional)" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} placeholder="e.g. 6109" />
+      <Select
+        label="GST Percentage"
+        value={gstPercentage}
+        onChange={(e) => setGstPercentage(e.target.value)}
+        options={[
+          { value: "0", label: "None" },
+          { value: "5", label: "5%" },
+          { value: "12", label: "12%" },
+          { value: "18", label: "18%" },
+          { value: "28", label: "28%" },
+        ]}
+      />
       <div className="flex items-end">
         <Button type="submit" disabled={loading}>{loading ? "Adding..." : "Quick Add"}</Button>
       </div>

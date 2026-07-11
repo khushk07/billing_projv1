@@ -192,8 +192,8 @@ export async function generateAndDownloadBill(
 
   const tableBody = data.items.map((item) => {
     const pct = item.gstPercentage ?? 0;
-    // Static HSN values for subcategories or default to 6109
-    const hsnCode = item.subcategory.toLowerCase().includes("shoes") ? "6403" : "6109";
+    // Read dynamic item.hsnCode if available, otherwise default to static subcategory fallback
+    const hsnCode = item.hsnCode || (item.subcategory.toLowerCase().includes("shoes") ? "6403" : "6109");
     
     if (pct > 0) {
       const baseTotal = item.lineTotal / (1 + pct / 100);

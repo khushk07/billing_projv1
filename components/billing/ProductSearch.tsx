@@ -17,6 +17,8 @@ interface SearchResult {
   variant?: string;
   source: "catalogue" | "stocklog";
   sourceId: string;
+  hsnCode?: string;
+  gstPercentage?: number;
 }
 
 interface ProductSearchProps {
@@ -54,6 +56,8 @@ export function ProductSearch({
         variant: p.variant,
         source: "catalogue" as const,
         sourceId: p.id,
+        hsnCode: p.hsnCode,
+        gstPercentage: p.gstPercentage,
       }));
     const logResults: SearchResult[] = stockLog
       .filter((e) => e.name.toLowerCase().includes(q))
@@ -67,6 +71,8 @@ export function ProductSearch({
         variant: e.promotedToCatalogue ? undefined : undefined, // stockLog variants aren't structured the same
         source: "stocklog" as const,
         sourceId: e.id,
+        hsnCode: e.hsnCode,
+        gstPercentage: e.gstPercentage,
       }));
     return [...catResults, ...logResults].slice(0, 12);
   }, [query, catalogue, stockLog]);
@@ -97,6 +103,8 @@ export function ProductSearch({
       lineTotal: r.price * qty,
       source: r.source,
       sourceId: r.sourceId,
+      hsnCode: r.hsnCode,
+      gstPercentage: r.gstPercentage,
     });
     setQuery("");
     setOpen(false);
@@ -115,6 +123,7 @@ export function ProductSearch({
       source: "quick",
       sourceId,
       gstPercentage: item.gstPercentage,
+      hsnCode: item.hsnCode,
     });
     setShowQuickAdd(false);
     setQuery("");

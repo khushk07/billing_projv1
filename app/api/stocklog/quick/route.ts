@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
       quantity: Number(body.quantity ?? 0),
       source: "billing",
       lastUsedPrice: Number(body.price),
+      hsnCode: body.hsnCode || undefined,
+      gstPercentage: body.gstPercentage !== undefined ? Number(body.gstPercentage) : undefined,
     });
     return jsonResponse(true, entry, undefined, 201);
   } catch (e) {

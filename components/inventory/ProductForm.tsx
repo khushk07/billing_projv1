@@ -33,6 +33,10 @@ export function ProductForm({
   const [lowStockThreshold, setLowStockThreshold] = useState(
     String(initialData?.lowStockThreshold ?? "5")
   );
+  const [hsnCode, setHsnCode] = useState(initialData?.hsnCode ?? "");
+  const [gstPercentage, setGstPercentage] = useState(
+    String(initialData?.gstPercentage ?? "0")
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -53,6 +57,8 @@ export function ProductForm({
         sellingPrice: Number(sellingPrice),
         stockQuantity: Number(stockQuantity),
         lowStockThreshold: Number(lowStockThreshold),
+        hsnCode: hsnCode || undefined,
+        gstPercentage: Number(gstPercentage),
       });
     } finally {
       setLoading(false);
@@ -83,6 +89,21 @@ export function ProductForm({
       <div className="grid grid-cols-2 gap-4">
         <Input label="Selling Price (₹)" type="number" min="0" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} required />
         <Input label="Stock Quantity" type="number" min="0" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} required />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Input label="HSN Code (optional)" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} placeholder="e.g. 6109 / 6403" />
+        <Select
+          label="GST Percentage"
+          value={gstPercentage}
+          onChange={(e) => setGstPercentage(e.target.value)}
+          options={[
+            { value: "0", label: "None" },
+            { value: "5", label: "5%" },
+            { value: "12", label: "12%" },
+            { value: "18", label: "18%" },
+            { value: "28", label: "28%" },
+          ]}
+        />
       </div>
       <Input label="Low Stock Threshold" type="number" min="0" value={lowStockThreshold} onChange={(e) => setLowStockThreshold(e.target.value)} />
       <div className="flex gap-2 pt-2">

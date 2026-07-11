@@ -30,6 +30,7 @@ interface SaleItemRow {
   source: string;
   source_id: string | null;
   gst_percentage: number | null;
+  hsn_code: string | null;
 }
 
 function toBillItem(row: SaleItemRow): BillItem {
@@ -44,6 +45,7 @@ function toBillItem(row: SaleItemRow): BillItem {
     source: row.source as BillItem["source"],
     sourceId: row.source_id ?? undefined,
     gstPercentage: row.gst_percentage ?? undefined,
+    hsnCode: row.hsn_code ?? undefined,
   };
 }
 
@@ -118,6 +120,7 @@ export async function completeSale(
     source: line.source,
     sourceId: line.sourceId,
     gstPercentage: line.gstPercentage,
+    hsnCode: line.hsnCode,
   }));
 
   const grandTotal = billItems.reduce((sum, i) => sum + i.lineTotal, 0);
@@ -170,6 +173,7 @@ export async function completeSale(
     source: item.source,
     source_id: item.sourceId ?? null,
     gst_percentage: item.gstPercentage ?? null,
+    hsn_code: item.hsnCode ?? null,
   }));
 
   const { error: itemsErr } = await supabase

@@ -13,6 +13,8 @@ export interface Product {
   lowStockThreshold: number;
   createdAt: string;
   updatedAt: string;
+  hsnCode?: string;
+  gstPercentage?: number;
 }
 
 export interface StockLogItem {
@@ -28,6 +30,8 @@ export interface StockLogItem {
   createdAt: string;
   updatedAt: string;
   promotedToCatalogue: boolean;
+  hsnCode?: string;
+  gstPercentage?: number;
 }
 
 export interface BillItem {
@@ -41,6 +45,7 @@ export interface BillItem {
   source: BillItemSource;
   sourceId?: string;
   gstPercentage?: number;
+  hsnCode?: string;
 }
 
 export interface Sale {
@@ -78,6 +83,7 @@ export interface BillLine {
   source: BillItemSource;
   sourceId?: string;
   gstPercentage?: number;
+  hsnCode?: string;
 }
 
 export interface ApiResponse<T = unknown> {

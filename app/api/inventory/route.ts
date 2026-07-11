@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
       sellingPrice: Number(body.sellingPrice),
       stockQuantity: Number(body.stockQuantity),
       lowStockThreshold: Number(body.lowStockThreshold ?? 5),
+      hsnCode: body.hsnCode || undefined,
+      gstPercentage: body.gstPercentage !== undefined ? Number(body.gstPercentage) : undefined,
     });
     return jsonResponse(true, product, undefined, 201);
   } catch (e) {

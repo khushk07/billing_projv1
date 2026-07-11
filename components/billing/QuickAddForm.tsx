@@ -13,6 +13,7 @@ export interface QuickAddResult {
   price: number;
   quantity: number;
   gstPercentage: number;
+  hsnCode?: string;
 }
 
 interface QuickAddFormProps {
@@ -32,6 +33,7 @@ export function QuickAddForm({
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [gstPercentage, setGstPercentage] = useState("0");
+  const [hsnCode, setHsnCode] = useState("");
 
   return (
     <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -54,6 +56,7 @@ export function QuickAddForm({
           disabled={!category}
         />
         <Input label="Price (₹)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Input label="HSN Code (optional)" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} placeholder="e.g. 6109" />
         <Select
           label="GST Percentage"
           value={gstPercentage}
@@ -100,6 +103,7 @@ export function QuickAddForm({
               price: Number(price),
               quantity: Number(quantity) || 1,
               gstPercentage: Number(gstPercentage),
+              hsnCode: hsnCode || undefined,
             })
           }
         >
