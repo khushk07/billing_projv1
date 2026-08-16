@@ -69,7 +69,7 @@ export async function addProduct(
       variant: input.variant ?? null,
       selling_price: input.sellingPrice,
       stock_quantity: input.stockQuantity,
-      low_stock_threshold: input.lowStockThreshold ?? 5,
+      low_stock_threshold: input.lowStockThreshold ?? 2,
       hsn_code: input.hsnCode ?? null,
       gst_percentage: input.gstPercentage ?? null,
       created_at: now,

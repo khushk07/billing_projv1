@@ -40,7 +40,7 @@ export function ProductForm({
     String(initialData?.stockQuantity ?? "")
   );
   const [lowStockThreshold, setLowStockThreshold] = useState(
-    String(initialData?.lowStockThreshold ?? "5")
+    String(initialData?.lowStockThreshold ?? "2")
   );
   const [hsnCode, setHsnCode] = useState(initialData?.hsnCode ?? "");
   const [gstPercentage, setGstPercentage] = useState(
