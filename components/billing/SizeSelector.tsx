@@ -25,9 +25,9 @@ export function SizeSelector({
   return (
     <div className="my-2">
       <label className="mb-1.5 block text-xs font-semibold text-stone-600 uppercase tracking-wider">
-        Select Size (Scrollable Menu):
+        Select Size (Vertically Scrollable):
       </label>
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-stone-300">
+      <div className="max-h-36 overflow-y-auto p-1.5 border border-stone-200 rounded-lg bg-stone-50/60 grid grid-cols-4 sm:grid-cols-6 gap-1.5">
         {sizes.map((sz) => {
           const isSelected = selectedSize === sz;
           const price = getAutoPrice(category, subcategory, model, sz);
@@ -37,10 +37,10 @@ export function SizeSelector({
               key={sz}
               type="button"
               onClick={() => onSelectSize(sz, price ?? 0)}
-              className={`flex flex-col items-center justify-center min-w-[70px] px-3 py-1.5 rounded-lg border text-xs transition-all font-medium whitespace-nowrap ${
+              className={`flex flex-col items-center justify-center p-2 rounded-md border text-xs transition-all font-medium ${
                 isSelected
                   ? "bg-summit-600 text-white border-summit-700 shadow-sm scale-105"
-                  : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 hover:border-stone-300"
+                  : "bg-white text-stone-700 border-stone-300 hover:bg-stone-100 hover:border-stone-400"
               }`}
             >
               <span className="font-bold text-sm">{sz}</span>
@@ -60,3 +60,4 @@ export function SizeSelector({
     </div>
   );
 }
+

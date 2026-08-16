@@ -173,19 +173,19 @@ export function ProductSearch({
                 </div>
               </div>
 
-              {/* Scrollable Size Menu for Model */}
+              {/* Vertically Scrollable Size Menu for Model */}
               <div className="mt-2">
                 <p className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider mb-1">
                   Select Size to Add:
                 </p>
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                <div className="max-h-32 overflow-y-auto p-1.5 bg-stone-100/60 rounded-md border border-stone-200 grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                   {m.variants.length > 0 ? (
                     m.variants.map((v) => (
                       <button
                         key={v.id}
                         type="button"
                         onClick={() => addModelWithSize(m, v.size, v.price)}
-                        className="flex flex-col items-center justify-center min-w-[62px] px-2.5 py-1.5 rounded-md border border-stone-300 bg-white hover:bg-summit-600 hover:text-white hover:border-summit-700 transition-all font-medium text-xs shadow-xs hover:scale-105 group"
+                        className="flex flex-col items-center justify-center p-1.5 rounded border border-stone-300 bg-white hover:bg-summit-600 hover:text-white hover:border-summit-700 transition-all font-medium text-xs shadow-xs hover:scale-105 group"
                       >
                         <span className="font-bold text-stone-900 group-hover:text-white">{v.size}</span>
                         <span className="text-[10px] text-stone-500 group-hover:text-amber-200 font-semibold">₹{v.price}</span>
@@ -195,7 +195,7 @@ export function ProductSearch({
                     <button
                       type="button"
                       onClick={() => addModelWithSize(m, "-", 1500)}
-                      className="px-3 py-1 bg-summit-600 text-white rounded text-xs"
+                      className="px-3 py-1 bg-summit-600 text-white rounded text-xs col-span-full"
                     >
                       + Add Item
                     </button>
