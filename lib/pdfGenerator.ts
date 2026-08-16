@@ -287,10 +287,14 @@ export async function generateAndDownloadBill(
       hsnSummaryMap[hsnCode].sgstAmount += gstAmt / 2;
     }
 
-    // Main item row (shows HSN, Qty, Rate, per, Base Amount)
+    // Main item row (shows Description, HSN, Qty, Rate, per, Base Amount)
+    const displayName = item.size || item.variant
+      ? `${item.name} (${item.size || item.variant})`
+      : item.name;
+
     tableBody.push([
       String(index + 1),
-      item.name,
+      displayName,
       hsnCode,
       quantityStr,
       baseRate.toFixed(2),

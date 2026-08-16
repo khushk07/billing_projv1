@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import type { BillLine } from "@/types";
 
 interface BillTableProps {
@@ -26,6 +27,7 @@ export function BillTable({ items, onUpdateQty, onUpdateGst, onUpdateHsn, onRemo
         <thead className="bg-stone-100 text-left text-stone-600">
           <tr>
             <th className="px-4 py-3">Item</th>
+            <th className="px-4 py-3">Size</th>
             <th className="px-4 py-3">Subcategory</th>
             <th className="px-4 py-3">Qty</th>
             <th className="px-4 py-3">HSN Code</th>
@@ -39,6 +41,15 @@ export function BillTable({ items, onUpdateQty, onUpdateGst, onUpdateHsn, onRemo
           {items.map((item) => (
             <tr key={item.id}>
               <td className="px-4 py-3 font-medium">{item.name}</td>
+              <td className="px-4 py-3">
+                {item.size || item.variant ? (
+                  <Badge variant="default" className="bg-amber-100 text-amber-900 border border-amber-300 font-semibold px-2 py-0.5">
+                    {item.size || item.variant}
+                  </Badge>
+                ) : (
+                  <span className="text-stone-400">-</span>
+                )}
+              </td>
               <td className="px-4 py-3 text-stone-500">{item.subcategory}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1.5">
@@ -95,7 +106,7 @@ export function BillTable({ items, onUpdateQty, onUpdateGst, onUpdateHsn, onRemo
         </tbody>
         <tfoot>
           <tr className="bg-stone-50 font-bold">
-            <td colSpan={6} className="px-4 py-3 text-right">
+            <td colSpan={7} className="px-4 py-3 text-right">
               Grand Total
             </td>
             <td className="px-4 py-3">₹{grandTotal}</td>
@@ -106,3 +117,4 @@ export function BillTable({ items, onUpdateQty, onUpdateGst, onUpdateHsn, onRemo
     </div>
   );
 }
+

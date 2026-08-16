@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { CATEGORIES, getSubcategories } from "@/lib/categories";
+import { useState, useEffect } from "react";
+import {
+  CATEGORIES,
+  getSubcategories,
+  getSubcategoryRules,
+  getAutoGst,
+  getAutoHsn,
+  getAutoPrice,
+} from "@/lib/categories";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -28,41 +35,99 @@ export function QuickAddForm({
   onCancel,
 }: QuickAddFormProps) {
   const [name, setName] = useState(searchQuery);
-  const [category, setCategory] = useState("");
-  const [subcategory, setSubcategory] = useState("");
+  const [category, setCategory] = useState("Hiking Gears");
+  const [subcategory, setSubcategory] = useState("Hiking Pants");
+  const [model, setModel] = useState("");
+  const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("1");
-  const [gstPercentage, setGstPercentage] = useState("0");
-  const [hsnCode, setHsnCode] = useState("");
+  const [gstPercentage, setGstPercentage] = useState("5");
+  const [hsnCode, setHsnCode] = useState("620319");
+
+  const rules = getSubcategoryRules(category, subcategory);
+
+  useEffect(() => {
+    if (category && !getSubcategories(category).includes(subcategory)) {
+      setSubcategory("");
+    }
+  }, [category, subcategory]);
+
+  useEffect(() => {
+    if (!category || !subcategory) return;
+
+    const autoGst = getAutoGst(category, subcategory);
+    if (autoGst !== undefined) {
+      setGstPercentage(String(autoGst));
+    }
+
+    const autoHsn = getAutoHsn(category, subcategory, Number(price) || 0);
+    if (autoHsn) {
+      setHsnCode(autoHsn);
+    }
+  }, [category, subcategory, price]);
+
+  useEffect(() => {
+    if (model && size) {
+      setName(`${model} - ${size}`);
+      const calculatedPrice = getAutoPrice(category, subcategory, model, size);
+      if (calculatedPrice !== undefined) {
+        setPrice(String(calculatedPrice));
+      }
+    } else if (model) {
+      setName(model);
+    }
+  }, [category, subcategory, model, size]);
 
   return (
     <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
       <p className="mb-2 text-sm font-medium text-amber-900">Add as quick item</p>
       <div className="grid gap-2 sm:grid-cols-2">
-        <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} />
         <Select
           label="Category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           options={CATEGORIES.map((c) => ({ value: c.name, label: c.name }))}
-          placeholder="Select"
+          placeholder="Select Category"
         />
         <Select
           label="Subcategory"
           value={subcategory}
           onChange={(e) => setSubcategory(e.target.value)}
           options={getSubcategories(category).map((s) => ({ value: s, label: s }))}
-          placeholder="Select"
+          placeholder="Select Subcategory"
           disabled={!category}
         />
+
+        {rules.models && rules.models.length > 0 ? (
+          <>
+            <Select
+              label="Model"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              options={rules.models.map((m) => ({ value: m, label: m }))}
+              placeholder="Select Model"
+            />
+            {rules.sizes && (
+              <Select
+                label="Size"
+                value={size}
+                onChange={(e) => setSize(e.target.value)}
+                options={rules.sizes.map((sz) => ({ value: sz, label: sz }))}
+                placeholder="Select Size"
+              />
+            )}
+          </>
+        ) : null}
+
+        <Input label="Item Name" value={name} onChange={(e) => setName(e.target.value)} />
         <Input label="Price (₹)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-        <Input label="HSN Code (optional)" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} placeholder="e.g. 6109" />
+        <Input label="HSN Code" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} placeholder="e.g. 620319" />
         <Select
           label="GST Percentage"
           value={gstPercentage}
           onChange={(e) => setGstPercentage(e.target.value)}
           options={[
-            { value: "0", label: "None" },
+            { value: "0", label: "None (0%)" },
             { value: "5", label: "5%" },
             { value: "12", label: "12%" },
             { value: "18", label: "18%" },
@@ -97,7 +162,7 @@ export function QuickAddForm({
           size="sm"
           onClick={() =>
             onAdd({
-              name,
+              name: name || (model ? `${model}${size ? " - " + size : ""}` : "Unnamed Item"),
               category,
               subcategory,
               price: Number(price),
@@ -116,3 +181,4 @@ export function QuickAddForm({
     </div>
   );
 }
+

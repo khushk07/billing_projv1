@@ -46,6 +46,8 @@ export interface BillItem {
   sourceId?: string;
   gstPercentage?: number;
   hsnCode?: string;
+  size?: string;
+  variant?: string;
 }
 
 export interface Sale {
@@ -84,6 +86,8 @@ export interface BillLine {
   sourceId?: string;
   gstPercentage?: number;
   hsnCode?: string;
+  size?: string;
+  variant?: string;
 }
 
 export interface ApiResponse<T = unknown> {

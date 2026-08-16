@@ -45,7 +45,12 @@ export function ProductSearch({
     const q = query.toLowerCase().trim();
     if (!q) return [];
     const catResults: SearchResult[] = catalogue
-      .filter((p) => p.name.toLowerCase().includes(q))
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.variant && p.variant.toLowerCase().includes(q)) ||
+          p.subcategory.toLowerCase().includes(q)
+      )
       .map((p) => ({
         id: `cat-${p.id}`,
         name: p.name,
@@ -68,13 +73,13 @@ export function ProductSearch({
         category: e.category,
         price: e.lastUsedPrice || e.approxPrice,
         stock: e.quantity,
-        variant: e.promotedToCatalogue ? undefined : undefined, // stockLog variants aren't structured the same
+        variant: undefined,
         source: "stocklog" as const,
         sourceId: e.id,
         hsnCode: e.hsnCode,
         gstPercentage: e.gstPercentage,
       }));
-    return [...catResults, ...logResults].slice(0, 12);
+    return [...catResults, ...logResults].slice(0, 15);
   }, [query, catalogue, stockLog]);
 
   useEffect(() => {
@@ -92,10 +97,11 @@ export function ProductSearch({
 
   const addResult = (r: SearchResult) => {
     const qty = qtyMap[r.id] ?? 1;
-    const finalName = r.variant ? `${r.name} (${r.variant})` : r.name;
     onAddItem({
       id: uuidv4(),
-      name: finalName,
+      name: r.name,
+      size: r.variant,
+      variant: r.variant,
       subcategory: r.subcategory,
       category: r.category,
       quantity: qty,
@@ -115,6 +121,8 @@ export function ProductSearch({
     onAddItem({
       id: uuidv4(),
       name: item.name,
+      size: item.hsnCode ? undefined : undefined,
+      variant: undefined,
       subcategory: item.subcategory,
       category: item.category,
       quantity: item.quantity,
@@ -152,7 +160,7 @@ export function ProductSearch({
     <div ref={containerRef} className="relative">
       <Input
         label="Search products"
-        placeholder="Type product name..."
+        placeholder="Type model name (e.g. Discovery, Phantom, Tactical)..."
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -162,34 +170,28 @@ export function ProductSearch({
         onKeyDown={onKeyDown}
       />
       {open && query.trim() && results.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-lg max-h-72 overflow-y-auto">
           {results.map((r, i) => (
             <div
               key={r.id}
-              className={`flex min-h-[52px] cursor-pointer items-center justify-between gap-2 border-b border-stone-100 px-3 py-3 last:border-0 active:bg-summit-100 ${
+              className={`flex min-h-[52px] cursor-pointer items-center justify-between gap-2 border-b border-stone-100 px-3 py-2.5 last:border-0 active:bg-summit-100 ${
                 i === highlight ? "bg-summit-50" : "hover:bg-stone-50"
               }`}
               onMouseEnter={() => setHighlight(i)}
               onClick={() => addResult(r)}
             >
               <div>
-                <span className="font-medium">{r.name}</span>
+                <span className="font-semibold text-stone-900">{r.name}</span>
                 {r.variant && (
-                  <Badge variant="default" className="ml-2 bg-stone-100 text-stone-700">
-                    {r.variant}
-                  </Badge>
+                  <span className="ml-2 inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-900 border border-amber-300">
+                    Size: {r.variant}
+                  </span>
                 )}
                 <span className="ml-2 text-xs text-stone-500">{r.subcategory}</span>
-                <div className="mt-0.5 flex gap-1">
-                  <Badge variant={r.source === "catalogue" ? "catalogue" : "stocklog"}>
-                    {r.source === "catalogue" ? "Catalogue" : "Stock Log"}
-                  </Badge>
-                  {r.stock !== undefined && (
-                    <span className="text-xs text-stone-500">Stock: {r.stock}</span>
-                  )}
-                </div>
               </div>
-              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+
+              <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                <span className="font-bold text-stone-850 text-sm">₹{r.price}</span>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -215,11 +217,17 @@ export function ProductSearch({
                     +
                   </button>
                 </div>
-                <span className="font-medium">₹{r.price}</span>
+                <button
+                  type="button"
+                  className="rounded bg-summit-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-summit-700 active:bg-summit-800"
+                  onClick={() => addResult(r)}
+                >
+                  + Add
+                </button>
               </div>
             </div>
           ))}
-          {/* Option to clear/cancel and close search drop-down */}
+
           <div className="flex justify-end p-2 bg-stone-50 border-t border-stone-100">
             <button
               type="button"
@@ -234,8 +242,7 @@ export function ProductSearch({
           </div>
         </div>
       )}
-      
-      {/* If quick add is triggered, render it statically inline rather than absolute dropdown overlay */}
+
       {showQuickAdd && query.trim() && (
         <div className="mt-3" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
           <QuickAddForm
@@ -251,3 +258,4 @@ export function ProductSearch({
     </div>
   );
 }
+
