@@ -152,6 +152,9 @@ export function getAutoHsn(
   // ── Rainwear ─────────────────────────────────────────────────
   if (cat === "rainwear") return "62014000";
 
+  return undefined;
+}
+
 /**
  * Calculates price for Hiking Pants based on model and size rules.
  *
