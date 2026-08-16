@@ -1,0 +1,270 @@
+import { supabase } from "@/lib/supabase";
+import { getNextBillNumber } from "@/lib/billNumber";
+import { reduceStockForSale } from "@/lib/inventoryService";
+import { updateStockLogUsage } from "@/lib/stocklogService";
+import { upsertCustomerFromSale, getCustomerById } from "@/lib/customersService";
+import type { BillItem, CompleteSalePayload, Sale } from "@/types";
+
+/* ── helpers: snake_case DB row ↔ camelCase TS type ─────────── */
+
+interface SaleRow {
+  id: string;
+  bill_number: string;
+  customer_id: string;
+  customer_name: string;
+  customer_phone: string;
+  grand_total: number;
+  created_at: string;
+  sale_items?: SaleItemRow[];
+}
+
+interface SaleItemRow {
+  id: string;
+  sale_id: string;
+  name: string;
+  subcategory: string;
+  category: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  source: string;
+  source_id: string | null;
+  gst_percentage: number | null;
+  hsn_code: string | null;
+}
+
+function toBillItem(row: SaleItemRow): BillItem {
+  return {
+    id: row.id,
+    name: row.name,
+    subcategory: row.subcategory,
+    category: row.category,
+    quantity: row.quantity,
+    unitPrice: row.unit_price,
+    lineTotal: row.line_total,
+    source: row.source as BillItem["source"],
+    sourceId: row.source_id ?? undefined,
+    gstPercentage: row.gst_percentage ?? undefined,
+    hsnCode: row.hsn_code ?? undefined,
+  };
+}
+
+function toSale(row: SaleRow): Sale {
+  return {
+    id: row.id,
+    billNumber: row.bill_number,
+    customerId: row.customer_id,
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    items: (row.sale_items ?? []).map(toBillItem),
+    grandTotal: row.grand_total,
+    createdAt: row.created_at,
+  };
+}
+
+/* ── service functions ──────────────────────────────────────── */
+
+/**
+ * Returns all sales, newest first.
+ */
+export async function getAllSales(): Promise<Sale[]> {
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*, sale_items(*)")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch sales: ${error.message}`);
+  return (data as SaleRow[]).map(toSale);
+}
+
+/**
+ * Completes a sale: persist sale, update stock, customers, stock log usage.
+ */
+export async function completeSale(
+  payload: CompleteSalePayload
+): Promise<Sale> {
+  const phone = payload.customerPhone.replace(/\D/g, "").slice(-10);
+  if (phone.length !== 10) {
+    throw new Error("Phone must be 10 digits");
+  }
+  if (!payload.customerName.trim()) {
+    throw new Error("Customer name is required");
+  }
+  if (payload.items.length === 0) {
+    throw new Error("Bill must have at least one item");
+  }
+
+  // Get next bill number from the single latest sale
+  const { data: latestSale, error: salesErr } = await supabase
+    .from("sales")
+    .select("bill_number")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (salesErr) throw new Error(`Failed to fetch latest sale: ${salesErr.message}`);
+
+  const billNumber = latestSale
+    ? getNextBillNumber([{ billNumber: latestSale.bill_number } as Sale])
+    : "SG-0001";
+
+  const now = new Date().toISOString();
+
+  const billItems = payload.items.map((line) => ({
+    id: line.id,
+    name: line.name,
+    subcategory: line.subcategory,
+    category: line.category,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    lineTotal: line.lineTotal,
+    source: line.source,
+    sourceId: line.sourceId,
+    gstPercentage: line.gstPercentage,
+    hsnCode: line.hsnCode,
+  }));
+
+  const grandTotal = billItems.reduce((sum, i) => sum + i.lineTotal, 0);
+
+  // Build the sale object for customer upsert (needs items for categoriesBought)
+  const saleForCustomer: Sale = {
+    id: "", // will be set after insert
+    billNumber,
+    customerId: "",
+    customerName: payload.customerName.trim(),
+    customerPhone: phone,
+    items: billItems as BillItem[],
+    grandTotal,
+    createdAt: now,
+  };
+
+  // Upsert customer first (we need the customer ID for the sale)
+  // Temporarily set a placeholder id — upsertCustomerFromSale uses sale.id for salesIds
+  const tempSaleId = crypto.randomUUID();
+  saleForCustomer.id = tempSaleId;
+
+  const customer = await upsertCustomerFromSale(saleForCustomer);
+
+  // Insert the sale
+  const { data: saleRow, error: insertErr } = await supabase
+    .from("sales")
+    .insert({
+      id: tempSaleId,
+      bill_number: billNumber,
+      customer_id: customer.id,
+      customer_name: payload.customerName.trim(),
+      customer_phone: phone,
+      grand_total: grandTotal,
+      created_at: now,
+    })
+    .select()
+    .single();
+
+  if (insertErr) throw new Error(`Failed to create sale: ${insertErr.message}`);
+
+  // Insert sale items
+  const saleItemRows = billItems.map((item) => ({
+    sale_id: saleRow.id,
+    name: item.name,
+    subcategory: item.subcategory,
+    category: item.category,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    line_total: item.lineTotal,
+    source: item.source,
+    source_id: item.sourceId ?? null,
+    gst_percentage: item.gstPercentage ?? null,
+    hsn_code: item.hsnCode ?? null,
+  }));
+
+  const { error: itemsErr } = await supabase
+    .from("sale_items")
+    .insert(saleItemRows);
+
+  if (itemsErr) throw new Error(`Failed to insert sale items: ${itemsErr.message}`);
+
+  // Reduce catalogue stock
+  await reduceStockForSale(
+    billItems.map((i) => ({
+      sourceId: i.sourceId,
+      quantity: i.quantity,
+      source: i.source,
+    }))
+  );
+
+  // Update stock log usage
+  await updateStockLogUsage(
+    billItems.map((i) => ({
+      sourceId: i.sourceId,
+      unitPrice: i.unitPrice,
+      quantity: i.quantity,
+      source: i.source,
+    }))
+  );
+
+  // Return the complete sale
+  const sale: Sale = {
+    id: saleRow.id,
+    billNumber,
+    customerId: customer.id,
+    customerName: payload.customerName.trim(),
+    customerPhone: phone,
+    items: billItems as BillItem[],
+    grandTotal,
+    createdAt: saleRow.created_at,
+  };
+
+  return sale;
+}
+
+/**
+ * Gets sales for a specific customer.
+ */
+export async function getSalesByCustomerId(
+  customerId: string
+): Promise<Sale[]> {
+  const customer = await getCustomerById(customerId);
+  if (!customer) return [];
+
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*, sale_items(*)")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch customer sales: ${error.message}`);
+  return (data as SaleRow[]).map(toSale);
+}
+
+/**
+ * Gets sales in a specific date range, newest first.
+ */
+export async function getSalesInDateRange(
+  startDate: Date,
+  endDate: Date
+): Promise<Sale[]> {
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*, sale_items(*)")
+    .gte("created_at", startDate.toISOString())
+    .lte("created_at", endDate.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch sales in date range: ${error.message}`);
+  return (data as SaleRow[]).map(toSale);
+}
+
+/**
+ * Gets the most recent sales up to a limit, newest first.
+ */
+export async function getRecentSales(limit: number): Promise<Sale[]> {
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*, sale_items(*)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`Failed to fetch recent sales: ${error.message}`);
+  return (data as SaleRow[]).map(toSale);
+}
+

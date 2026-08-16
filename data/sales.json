@@ -1,0 +1,68 @@
+[
+  {
+    "id": "27a0ac1b-bca4-4a36-9ea0-ab45484b2f63",
+    "billNumber": "SG-0001",
+    "customerId": "cf8dafc6-c8c9-45ef-a5ee-9f4db221a5bf",
+    "customerName": "seema",
+    "customerPhone": "9773613345",
+    "items": [
+      {
+        "id": "8f7e2078-fd12-43bf-a28e-3ec07035378d",
+        "name": "Tactical Pro",
+        "subcategory": "Hiking Pants",
+        "category": "Trekking Gear",
+        "quantity": 1,
+        "unitPrice": 1500,
+        "lineTotal": 1500,
+        "source": "quick",
+        "sourceId": "59bc161c-cfb6-4ca3-aea4-166511bb7a25"
+      }
+    ],
+    "grandTotal": 1500,
+    "createdAt": "2026-05-18T21:48:32.454Z"
+  },
+  {
+    "id": "0a9c1cf0-62cb-4d78-9c9b-231f2ac28ed5",
+    "billNumber": "SG-0002",
+    "customerId": "43511256-6bb4-4fcf-94fc-2aba0000d24d",
+    "customerName": "Pritam",
+    "customerPhone": "9773431493",
+    "items": [
+      {
+        "id": "d4a6e2cf-3fac-4d8b-94c5-a2244e8d1617",
+        "name": "CTR Sherpa 1",
+        "subcategory": "Hiking Shoes",
+        "category": "Trekking Gear",
+        "quantity": 1,
+        "unitPrice": 1500,
+        "lineTotal": 1500,
+        "source": "catalogue",
+        "sourceId": "cc86819d-cde2-49ac-9a40-0b15d61658f4"
+      }
+    ],
+    "grandTotal": 1500,
+    "createdAt": "2026-05-18T21:50:37.773Z"
+  },
+  {
+    "id": "1d5dad65-1eda-4206-aac2-1c56cec0a228",
+    "billNumber": "SG-0003",
+    "customerId": "c6d58694-bfe0-4e69-b9c2-6bd3019e8e71",
+    "customerName": "Jay",
+    "customerPhone": "9004860291",
+    "items": [
+      {
+        "id": "d8946f36-bffb-4827-9314-006033871909",
+        "name": "Synthetic woolen socks",
+        "subcategory": "Accessories",
+        "category": "Trekking Gear",
+        "quantity": 4,
+        "unitPrice": 250,
+        "lineTotal": 1000,
+        "source": "quick",
+        "sourceId": "855a6863-b303-4cb5-81a8-fe715f3b9738"
+      }
+    ],
+    "grandTotal": 1000,
+    "createdAt": "2026-05-18T22:51:32.908Z"
+  }
+]
