@@ -155,47 +155,73 @@ export function getAutoHsn(
   return undefined;
 }
 
-/**
- * Calculates price for Hiking Pants based on model and size rules.
- *
- * Rules:
- *  - Discovery (Convertible) & Phantom: 24"-38" → ₹1,600 | 40"-44" → ₹1,800
- *  - Tactical: All sizes → ₹1,500
- *  - Sprint: All sizes → ₹1,300
- *  - Cargo (Convertible): All sizes → ₹1,300
- *  - Aqua Pro (Waterproof): All sizes → ₹1,900
- *  - Terra Trek (Convertible): All sizes → ₹1,500
- *  - Nomad (Cargo) & Delta (Convertible): All sizes → ₹1,700
- *  - Aerofit (Convertible): All sizes → ₹1,800
- *  - Mt. Kailash (Snow Pants) & Mt. Trishul (Snow Pants): 28"-38" → ₹2,100 | 40"-44" → ₹2,300
- */
-export function getHikingPantsPrice(model: string, size: string): number | undefined {
-  const m = model.toLowerCase().trim();
-  const sizeNum = parseInt(size.replace(/\D/g, ""), 10);
-
-  if (m.includes("discovery") || m.includes("phantom")) {
-    if (isNaN(sizeNum) || sizeNum <= 38) return 1600;
-    return 1800;
-  }
-
-  if (m.includes("tactical")) return 1500;
-  if (m.includes("sprint")) return 1300;
-  if (m.includes("cargo (convertible)") || (m.includes("cargo") && m.includes("convertible"))) return 1300;
-  if (m.includes("aqua pro")) return 1900;
-  if (m.includes("terra trek")) return 1500;
-  if (m.includes("nomad") || m.includes("delta")) return 1700;
-  if (m.includes("aerofit")) return 1800;
-
-  if (m.includes("kailash") || m.includes("trishul")) {
-    if (isNaN(sizeNum) || sizeNum <= 38) return 2100;
-    return 2300;
-  }
-
-  return undefined;
+export interface SizePriceRule {
+  minSize?: number;
+  maxSize?: number;
+  sizes?: string[];
+  price: number;
 }
 
+export interface ModelPricingRule {
+  category: string;
+  subcategory: string;
+  models: string[];
+  rules: SizePriceRule[];
+}
+
+export const MODEL_PRICING_RULES: ModelPricingRule[] = [
+  {
+    category: "Hiking Gears",
+    subcategory: "Hiking Pants",
+    models: ["Discovery (Convertible)", "Phantom"],
+    rules: [
+      { maxSize: 38, price: 1600 },
+      { minSize: 40, price: 1800 },
+    ],
+  },
+  {
+    category: "Hiking Gears",
+    subcategory: "Hiking Pants",
+    models: ["Tactical", "Terra Trek (Convertible)"],
+    rules: [{ price: 1500 }],
+  },
+  {
+    category: "Hiking Gears",
+    subcategory: "Hiking Pants",
+    models: ["Sprint", "Cargo (Convertible)"],
+    rules: [{ price: 1300 }],
+  },
+  {
+    category: "Hiking Gears",
+    subcategory: "Hiking Pants",
+    models: ["Aqua Pro (Waterproof)"],
+    rules: [{ price: 1900 }],
+  },
+  {
+    category: "Hiking Gears",
+    subcategory: "Hiking Pants",
+    models: ["Nomad (Cargo)", "Delta (Convertible)"],
+    rules: [{ price: 1700 }],
+  },
+  {
+    category: "Hiking Gears",
+    subcategory: "Hiking Pants",
+    models: ["Aerofit (Convertible)"],
+    rules: [{ price: 1800 }],
+  },
+  {
+    category: "Hiking Gears",
+    subcategory: "Hiking Pants",
+    models: ["Mt. Kailash (Snow Pants)", "Mt. Trishul (Snow Pants)"],
+    rules: [
+      { maxSize: 38, price: 2100 },
+      { minSize: 40, price: 2300 },
+    ],
+  },
+];
+
 /**
- * Returns auto-calculated price for a category, subcategory, model, and size if matching rules exist.
+ * Dynamically evaluates pricing for a category, subcategory, model, and size using MODEL_PRICING_RULES.
  */
 export function getAutoPrice(
   category: string,
@@ -203,15 +229,38 @@ export function getAutoPrice(
   model?: string,
   size?: string
 ): number | undefined {
+  if (!category || !subcategory || !model) return undefined;
+
   const cat = category.toLowerCase().trim();
   const sub = subcategory.toLowerCase().trim();
+  const mod = model.toLowerCase().trim();
+  const sizeNum = size ? parseInt(size.replace(/\D/g, ""), 10) : NaN;
 
-  if ((cat === "hiking gears" || cat === "trekking gear") && sub === "hiking pants" && model && size) {
-    return getHikingPantsPrice(model, size);
+  const ruleGroup = MODEL_PRICING_RULES.find((group) => {
+    const isCatMatch = group.category.toLowerCase().trim() === cat || (cat.includes("trekking") && group.category.includes("hiking"));
+    const isSubMatch = group.subcategory.toLowerCase().trim() === sub;
+    const isModelMatch = group.models.some(
+      (m) => m.toLowerCase().trim() === mod || mod.includes(m.toLowerCase().trim()) || m.toLowerCase().trim().includes(mod)
+    );
+    return isCatMatch && isSubMatch && isModelMatch;
+  });
+
+  if (!ruleGroup) return undefined;
+
+  for (const rule of ruleGroup.rules) {
+    if (rule.sizes && size && !rule.sizes.includes(size)) continue;
+    if (rule.maxSize !== undefined && !isNaN(sizeNum) && sizeNum > rule.maxSize) continue;
+    if (rule.minSize !== undefined && !isNaN(sizeNum) && sizeNum < rule.minSize) continue;
+    return rule.price;
   }
 
   return undefined;
 }
+
+export function getHikingPantsPrice(model: string, size: string): number | undefined {
+  return getAutoPrice("Hiking Gears", "Hiking Pants", model, size);
+}
+
 
 
 

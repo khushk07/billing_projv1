@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { SizeSelector } from "./SizeSelector";
 
 export interface QuickAddResult {
   name: string;
@@ -99,7 +100,7 @@ export function QuickAddForm({
         />
 
         {rules.models && rules.models.length > 0 ? (
-          <>
+          <div className="col-span-2">
             <Select
               label="Model"
               value={model}
@@ -107,16 +108,20 @@ export function QuickAddForm({
               options={rules.models.map((m) => ({ value: m, label: m }))}
               placeholder="Select Model"
             />
-            {rules.sizes && (
-              <Select
-                label="Size"
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
-                options={rules.sizes.map((sz) => ({ value: sz, label: sz }))}
-                placeholder="Select Size"
+            {model && (
+              <SizeSelector
+                category={category}
+                subcategory={subcategory}
+                model={model}
+                selectedSize={size}
+                onSelectSize={(selectedSz, calculatedPrice) => {
+                  setSize(selectedSz);
+                  setName(`${model} - ${selectedSz}`);
+                  if (calculatedPrice) setPrice(String(calculatedPrice));
+                }}
               />
             )}
-          </>
+          </div>
         ) : null}
 
         <Input label="Item Name" value={name} onChange={(e) => setName(e.target.value)} />

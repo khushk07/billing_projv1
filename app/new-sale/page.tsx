@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getAutoHsn } from "@/lib/categories";
+import { getAutoHsn, getAutoPrice } from "@/lib/categories";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CustomerLookup } from "@/components/billing/CustomerLookup";
@@ -114,6 +114,23 @@ export default function NewSalePage() {
     );
   };
 
+  const updateSize = (id: string, newSize: string) => {
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const autoPrice = getAutoPrice(i.category, i.subcategory, i.name, newSize);
+        const newUnitPrice = autoPrice !== undefined ? autoPrice : i.unitPrice;
+        return {
+          ...i,
+          size: newSize,
+          variant: newSize,
+          unitPrice: newUnitPrice,
+          lineTotal: newUnitPrice * i.quantity,
+        };
+      })
+    );
+  };
+
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
@@ -210,7 +227,14 @@ export default function NewSalePage() {
         onAddItem={addItem}
         onQuickAddSave={handleQuickAddSave}
       />
-      <BillTable items={items} onUpdateQty={updateQty} onUpdateGst={updateGst} onUpdateHsn={updateHsn} onRemove={removeItem} />
+      <BillTable
+        items={items}
+        onUpdateQty={updateQty}
+        onUpdateGst={updateGst}
+        onUpdateHsn={updateHsn}
+        onUpdateSize={updateSize}
+        onRemove={removeItem}
+      />
       <div className="hidden lg:block">
         <BillSummary
           items={items}
