@@ -125,7 +125,7 @@ export function ProductForm({
         disabled={!category}
       />
 
-      {/* Render Model and Size pickers if rules are configured for this subcategory */}
+      {/* Model & Size Pickers if configured for subcategory */}
       {rules.models && rules.models.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 bg-slate-900/40 p-3 rounded-lg border border-slate-800">
           <Select
@@ -134,16 +134,21 @@ export function ProductForm({
             onChange={(e) => setModel(e.target.value)}
             options={rules.models.map((m) => ({ value: m, label: m }))}
             placeholder="Select Model"
-            required
           />
           {rules.sizes && (
             <Select
-              label="Size"
+              label="Predefined Size (Optional)"
               value={size}
-              onChange={(e) => setSize(e.target.value)}
-              options={rules.sizes.map((sz) => ({ value: sz, label: sz }))}
-              placeholder="Select Size"
-              required
+              onChange={(e) => {
+                const val = e.target.value;
+                setSize(val);
+                setVariant(val);
+              }}
+              options={[
+                { value: "", label: "N/A (No Size)" },
+                ...rules.sizes.map((sz) => ({ value: sz, label: sz })),
+              ]}
+              placeholder="Select Size (or leave blank)"
             />
           )}
         </div>
@@ -153,15 +158,18 @@ export function ProductForm({
         label="Product Display Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="e.g. Discovery (Convertible) - 32&quot;"
+        placeholder="e.g. Discovery (Convertible), Trekking Backpack 50L..."
         required
       />
 
       <Input
-        label="Variant (optional)"
-        value={variant}
-        onChange={(e) => setVariant(e.target.value)}
-        placeholder="e.g. 32&quot; / Black"
+        label="Size / Variant (Optional)"
+        value={variant || size}
+        onChange={(e) => {
+          setVariant(e.target.value);
+          setSize(e.target.value);
+        }}
+        placeholder="e.g. N/A, UK 8, S, M, L, 32&quot; (Leave blank if no size)"
       />
 
       <div className="grid grid-cols-2 gap-4">

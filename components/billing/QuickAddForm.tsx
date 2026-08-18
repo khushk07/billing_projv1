@@ -22,6 +22,8 @@ export interface QuickAddResult {
   quantity: number;
   gstPercentage: number;
   hsnCode?: string;
+  size?: string;
+  variant?: string;
 }
 
 interface QuickAddFormProps {
@@ -125,6 +127,12 @@ export function QuickAddForm({
         ) : null}
 
         <Input label="Item Name" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input
+          label="Size / Variant (Optional)"
+          value={size}
+          onChange={(e) => setSize(e.target.value)}
+          placeholder="e.g. N/A, UK 8, S, M, L (leave blank if none)"
+        />
         <Input label="Price (₹)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
         <Input label="HSN Code" value={hsnCode} onChange={(e) => setHsnCode(e.target.value)} placeholder="e.g. 620319" />
         <Select
@@ -174,6 +182,8 @@ export function QuickAddForm({
               quantity: Number(quantity) || 1,
               gstPercentage: Number(gstPercentage),
               hsnCode: hsnCode || undefined,
+              size: size || undefined,
+              variant: size || undefined,
             })
           }
         >

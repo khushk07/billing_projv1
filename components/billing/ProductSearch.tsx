@@ -131,8 +131,8 @@ export function ProductSearch({
     onAddItem({
       id: uuidv4(),
       name: item.name,
-      size: undefined,
-      variant: undefined,
+      size: item.size || item.variant,
+      variant: item.variant || item.size,
       subcategory: item.subcategory,
       category: item.category,
       quantity: item.quantity,
