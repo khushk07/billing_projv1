@@ -237,6 +237,7 @@ export default function NewSalePage() {
       />
       <BillTable
         items={items}
+        catalogue={catalogue}
         onUpdateQty={updateQty}
         onUpdateGst={updateGst}
         onUpdateHsn={updateHsn}

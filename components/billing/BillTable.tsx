@@ -3,10 +3,11 @@
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { getSubcategoryRules } from "@/lib/categories";
-import type { BillLine } from "@/types";
+import type { BillLine, Product } from "@/types";
 
 interface BillTableProps {
   items: BillLine[];
+  catalogue?: Product[];
   onUpdateQty: (id: string, quantity: number) => void;
   onUpdateGst: (id: string, gstPercentage: number) => void;
   onUpdateHsn: (id: string, hsnCode: string) => void;
@@ -17,6 +18,7 @@ interface BillTableProps {
 
 export function BillTable({
   items,
+  catalogue = [],
   onUpdateQty,
   onUpdateGst,
   onUpdateHsn,
@@ -56,6 +58,20 @@ export function BillTable({
             const sizeOptions = rules.sizes && rules.sizes.length > 0 ? rules.sizes : ["N/A"];
             const currentSize = item.size || item.variant || sizeOptions[0];
 
+            // Dynamic Model Colours from Stock Catalogue
+            const matchingProds = catalogue.filter(
+              (p) =>
+                p.name.toLowerCase().includes(item.name.toLowerCase()) ||
+                item.name.toLowerCase().includes(p.name.toLowerCase())
+            );
+            const colorSet = new Set<string>();
+            matchingProds.forEach((p) => {
+              if (p.color && p.color.trim()) colorSet.add(p.color.trim());
+            });
+            if (item.color && item.color.trim()) colorSet.add(item.color.trim());
+
+            const colorOptions = Array.from(colorSet);
+
             return (
               <tr key={item.id}>
                 <td className="px-4 py-3 font-medium">{item.name}</td>
@@ -81,15 +97,29 @@ export function BillTable({
                   )}
                 </td>
 
-                {/* Inputted Colour Field */}
+                {/* Model-Specific Colour Dropdown */}
                 <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    placeholder="e.g. Green, Black..."
-                    className="w-24 rounded border border-stone-300 px-2 py-1 text-xs font-medium text-stone-800 focus:border-summit-500 focus:outline-none"
-                    value={item.color ?? ""}
-                    onChange={(e) => onUpdateColor && onUpdateColor(item.id, e.target.value)}
-                  />
+                  {colorOptions.length > 0 ? (
+                    <select
+                      className="rounded-md border border-stone-300 bg-stone-50 px-2.5 py-1 text-xs font-semibold text-stone-800 focus:border-stone-500 focus:outline-none cursor-pointer shadow-xs"
+                      value={item.color || colorOptions[0]}
+                      onChange={(e) => onUpdateColor && onUpdateColor(item.id, e.target.value)}
+                    >
+                      {colorOptions.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="e.g. Green..."
+                      className="w-24 rounded border border-stone-300 px-2 py-1 text-xs font-medium text-stone-800 focus:border-summit-500 focus:outline-none"
+                      value={item.color ?? ""}
+                      onChange={(e) => onUpdateColor && onUpdateColor(item.id, e.target.value)}
+                    />
+                  )}
                 </td>
                 <td className="px-4 py-3 text-stone-500">{item.subcategory}</td>
                 <td className="px-4 py-3">
