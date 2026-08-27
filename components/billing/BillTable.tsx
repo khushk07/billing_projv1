@@ -37,6 +37,7 @@ export function BillTable({
           <tr>
             <th className="px-4 py-3">Item</th>
             <th className="px-4 py-3">Size</th>
+            <th className="px-4 py-3">Colour</th>
             <th className="px-4 py-3">Subcategory</th>
             <th className="px-4 py-3">Qty</th>
             <th className="px-4 py-3">HSN Code</th>
@@ -71,6 +72,15 @@ export function BillTable({
                     <Badge variant="default" className="bg-amber-100 text-amber-900 border border-amber-300 font-semibold px-2 py-0.5">
                       {item.size || item.variant}
                     </Badge>
+                  ) : (
+                    <span className="text-stone-400">-</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {item.color ? (
+                    <span className="inline-flex items-center rounded-md bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-800 border border-stone-300">
+                      {item.color}
+                    </span>
                   ) : (
                     <span className="text-stone-400">-</span>
                   )}
@@ -132,7 +142,7 @@ export function BillTable({
         </tbody>
         <tfoot>
           <tr className="bg-stone-50 font-bold">
-            <td colSpan={7} className="px-4 py-3 text-right">
+            <td colSpan={8} className="px-4 py-3 text-right">
               Grand Total
             </td>
             <td className="px-4 py-3">₹{grandTotal}</td>

@@ -50,7 +50,8 @@ export function ProductTable({
             <th className="px-4 py-3">Name</th>
             <th className="px-4 py-3">Category</th>
             <th className="px-4 py-3">Subcategory</th>
-            <th className="px-4 py-3">Size / Variant</th>
+            <th className="px-4 py-3">Size</th>
+            <th className="px-4 py-3">Colour</th>
             <th className="px-4 py-3">Price</th>
             <th className="px-4 py-3">Stock</th>
             <th className="px-4 py-3">Actions</th>
@@ -66,10 +67,19 @@ export function ProductTable({
               <td className="px-4 py-3">{p.category}</td>
               <td className="px-4 py-3">{p.subcategory}</td>
               <td className="px-4 py-3">
-                {p.variant ? (
+                {p.size || p.variant ? (
                   <Badge variant="default" className="bg-amber-100 text-amber-900 border border-amber-300 font-semibold px-2 py-0.5">
-                    {p.variant}
+                    {p.size || p.variant}
                   </Badge>
+                ) : (
+                  <span className="text-stone-400 font-normal">N/A</span>
+                )}
+              </td>
+              <td className="px-4 py-3">
+                {p.color ? (
+                  <span className="inline-flex items-center rounded-md bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-800 border border-stone-300">
+                    {p.color}
+                  </span>
                 ) : (
                   <span className="text-stone-400 font-normal">N/A</span>
                 )}

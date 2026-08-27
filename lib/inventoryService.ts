@@ -5,12 +5,16 @@ import type { Product } from "@/types";
 // Mapper: DB row (snake_case) → TypeScript Product (camelCase)
 // ---------------------------------------------------------------------------
 function toProduct(row: Record<string, unknown>): Product {
+  const size = (row.size as string) ?? (row.variant as string) ?? undefined;
+  const color = (row.color as string) ?? undefined;
   return {
     id: row.id as string,
     name: row.name as string,
     category: row.category as string,
     subcategory: row.subcategory as string,
-    variant: (row.variant as string) ?? undefined,
+    size: size,
+    color: color,
+    variant: size || color ? [color, size].filter(Boolean).join(" / ") : undefined,
     sellingPrice: row.selling_price as number,
     stockQuantity: row.stock_quantity as number,
     lowStockThreshold: row.low_stock_threshold as number,
@@ -31,6 +35,8 @@ function toDbFields(
   if (input.name !== undefined) map.name = input.name;
   if (input.category !== undefined) map.category = input.category;
   if (input.subcategory !== undefined) map.subcategory = input.subcategory;
+  if (input.size !== undefined) map.size = input.size;
+  if (input.color !== undefined) map.color = input.color;
   if (input.variant !== undefined) map.variant = input.variant;
   if (input.sellingPrice !== undefined) map.selling_price = input.sellingPrice;
   if (input.stockQuantity !== undefined) map.stock_quantity = input.stockQuantity;
@@ -66,7 +72,9 @@ export async function addProduct(
       name: input.name,
       category: input.category,
       subcategory: input.subcategory,
-      variant: input.variant ?? null,
+      size: input.size ?? null,
+      color: input.color ?? null,
+      variant: input.variant ?? input.size ?? null,
       selling_price: input.sellingPrice,
       stock_quantity: input.stockQuantity,
       low_stock_threshold: input.lowStockThreshold ?? 2,

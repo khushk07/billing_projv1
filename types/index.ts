@@ -7,6 +7,8 @@ export interface Product {
   name: string;
   category: string;
   subcategory: string;
+  size?: string;
+  color?: string;
   variant?: string;
   sellingPrice: number;
   stockQuantity: number;
@@ -47,6 +49,7 @@ export interface BillItem {
   gstPercentage?: number;
   hsnCode?: string;
   size?: string;
+  color?: string;
   variant?: string;
 }
 
@@ -87,6 +90,7 @@ export interface BillLine {
   gstPercentage?: number;
   hsnCode?: string;
   size?: string;
+  color?: string;
   variant?: string;
 }
 

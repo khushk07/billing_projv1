@@ -31,8 +31,8 @@ export function ProductForm({
   const [category, setCategory] = useState(initialData?.category ?? "");
   const [subcategory, setSubcategory] = useState(initialData?.subcategory ?? "");
   const [model, setModel] = useState("");
-  const [size, setSize] = useState("");
-  const [variant, setVariant] = useState(initialData?.variant ?? "");
+  const [size, setSize] = useState(initialData?.size ?? initialData?.variant ?? "");
+  const [color, setColor] = useState(initialData?.color ?? "");
   const [sellingPrice, setSellingPrice] = useState(
     String(initialData?.sellingPrice ?? "")
   );
@@ -75,7 +75,6 @@ export function ProductForm({
   useEffect(() => {
     if (model && size) {
       setName(`${model} - ${size}`);
-      setVariant(size);
       const calculatedPrice = getAutoPrice(category, subcategory, model, size);
       if (calculatedPrice !== undefined) {
         setSellingPrice(String(calculatedPrice));
@@ -93,7 +92,9 @@ export function ProductForm({
         name: name || (model ? `${model}${size ? " - " + size : ""}` : "Unnamed Product"),
         category,
         subcategory,
-        variant: variant || size || undefined,
+        size: size || undefined,
+        color: color || undefined,
+        variant: [color, size].filter(Boolean).join(" / ") || undefined,
         sellingPrice: Number(sellingPrice),
         stockQuantity: Number(stockQuantity),
         lowStockThreshold: Number(lowStockThreshold),
@@ -142,7 +143,6 @@ export function ProductForm({
               onChange={(e) => {
                 const val = e.target.value;
                 setSize(val);
-                setVariant(val);
               }}
               options={[
                 { value: "", label: "N/A (No Size)" },
@@ -162,15 +162,21 @@ export function ProductForm({
         required
       />
 
-      <Input
-        label="Size / Variant (Optional)"
-        value={variant || size}
-        onChange={(e) => {
-          setVariant(e.target.value);
-          setSize(e.target.value);
-        }}
-        placeholder="e.g. N/A, UK 8, S, M, L, 32&quot; (Leave blank if no size)"
-      />
+      {/* Separate Size and Colour Inputs */}
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Size (Optional / N/A)"
+          value={size}
+          onChange={(e) => setSize(e.target.value)}
+          placeholder="e.g. N/A, 32&quot;, UK 8, M, L..."
+        />
+        <Input
+          label="Colour (Optional / N/A)"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+          placeholder="e.g. N/A, Black, Red, Navy, Olive..."
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <Input
