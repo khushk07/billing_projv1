@@ -102,7 +102,8 @@ export function getSubcategoryRules(category: string, subcategory: string): Subc
   const cat = category.toLowerCase().trim();
   const sub = subcategory.toLowerCase().trim();
 
-  if ((cat === "hiking gears" || cat === "trekking gear") && sub === "hiking pants") {
+  // ── Hiking Pants ──
+  if (sub === "hiking pants") {
     return {
       models: HIKING_PANTS_MODELS,
       sizes: HIKING_PANTS_SIZES,
@@ -111,7 +112,30 @@ export function getSubcategoryRules(category: string, subcategory: string): Subc
     };
   }
 
-  return {};
+  // ── Shirts / T-Shirts / Jackets ──
+  if (sub === "tshirt" || sub === "t-shirt" || sub === "winter jackets") {
+    return {
+      sizes: ["S", "M", "L", "XL", "XXL", "3XL"],
+    };
+  }
+
+  // ── Hiking Shoes / Footwear ──
+  if (sub === "hiking shoes" || sub === "shoes") {
+    return {
+      sizes: ["UK 6", "UK 7", "UK 8", "UK 9", "UK 10", "UK 11", "UK 12", "EU 40", "EU 41", "EU 42", "EU 43", "EU 44", "EU 45"],
+    };
+  }
+
+  // ── Rainwear ──
+  if (cat === "rainwear" || sub === "rainsuits" || sub === "ponchos" || sub === "longcoat") {
+    return {
+      sizes: ["Free Size", "S", "M", "L", "XL", "XXL"],
+    };
+  }
+
+  return {
+    sizes: ["N/A"],
+  };
 }
 
 /**

@@ -117,8 +117,8 @@ export function ProductSearch({
     onAddItem({
       id: uuidv4(),
       name: item.name,
-      size: item.defaultSize || "30\"",
-      color: item.defaultColor || "Black",
+      size: item.defaultSize || undefined,
+      color: item.defaultColor || "",
       variant: item.defaultSize || undefined,
       subcategory: item.subcategory,
       category: item.category,
