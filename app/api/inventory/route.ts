@@ -34,10 +34,12 @@ export async function POST(request: NextRequest) {
       name: body.name,
       category: body.category,
       subcategory: body.subcategory,
+      size: body.size,
+      color: body.color,
       variant: body.variant,
       sellingPrice: Number(body.sellingPrice),
       stockQuantity: Number(body.stockQuantity),
-      lowStockThreshold: Number(body.lowStockThreshold ?? 5),
+      lowStockThreshold: Number(body.lowStockThreshold ?? 2),
       hsnCode: body.hsnCode || undefined,
       gstPercentage: body.gstPercentage !== undefined ? Number(body.gstPercentage) : undefined,
     });

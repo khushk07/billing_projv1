@@ -24,6 +24,23 @@ function decodeVariant(rawVariant?: string | null): { size?: string; color?: str
       // ignore json parse error and fallback
     }
   }
+
+  // Smartly split "Colour / Size" or "Size / Colour" string formats e.g. "Green / 30""
+  if (typeof rawVariant === "string" && rawVariant.includes(" / ")) {
+    const parts = rawVariant.split(" / ").map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 2) {
+      const part1IsSize = /\d|uk|us|eu|^s$|^m$|^l$|^xl$/i.test(parts[1]);
+      if (part1IsSize) {
+        return { color: parts[0], size: parts[1], variant: rawVariant };
+      }
+      const part0IsSize = /\d|uk|us|eu|^s$|^m$|^l$|^xl$/i.test(parts[0]);
+      if (part0IsSize) {
+        return { size: parts[0], color: parts[1], variant: rawVariant };
+      }
+      return { color: parts[0], size: parts[1], variant: rawVariant };
+    }
+  }
+
   return {
     size: rawVariant || undefined,
     color: undefined,
