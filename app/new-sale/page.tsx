@@ -131,6 +131,14 @@ export default function NewSalePage() {
     );
   };
 
+  const updateColor = (id: string, newColor: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id ? { ...i, color: newColor } : i
+      )
+    );
+  };
+
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
@@ -233,6 +241,7 @@ export default function NewSalePage() {
         onUpdateGst={updateGst}
         onUpdateHsn={updateHsn}
         onUpdateSize={updateSize}
+        onUpdateColor={updateColor}
         onRemove={removeItem}
       />
       <div className="hidden lg:block">

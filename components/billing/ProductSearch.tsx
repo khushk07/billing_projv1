@@ -42,19 +42,22 @@ export function ProductSearch({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Group search results by Model Name for clean display
-  const groupedModels = useMemo(() => {
+  const searchResults = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return [];
 
     const map = new Map<string, {
+      id: string;
       name: string;
       category: string;
       subcategory: string;
+      price: number;
       source: "catalogue" | "stocklog";
       sourceId: string;
       hsnCode?: string;
       gstPercentage?: number;
-      variants: { size: string; price: number; id: string }[];
+      defaultSize?: string;
+      defaultColor?: string;
     }>();
 
     for (const p of catalogue) {
@@ -63,21 +66,22 @@ export function ProductSearch({
         (p.variant && p.variant.toLowerCase().includes(q)) ||
         p.subcategory.toLowerCase().includes(q)
       ) {
-        if (!map.has(p.name)) {
-          map.set(p.name, {
-            name: p.name,
+        // Extract base model name without trailing size/color
+        const baseName = p.name.replace(/\s*-\s*\d+.*$/i, "").trim();
+        if (!map.has(baseName)) {
+          map.set(baseName, {
+            id: p.id,
+            name: baseName,
             category: p.category,
             subcategory: p.subcategory,
+            price: p.sellingPrice,
             source: "catalogue",
             sourceId: p.id,
             hsnCode: p.hsnCode,
             gstPercentage: p.gstPercentage,
-            variants: [],
+            defaultSize: p.size,
+            defaultColor: p.color,
           });
-        }
-        const item = map.get(p.name)!;
-        if (p.variant) {
-          item.variants.push({ size: p.variant, price: p.sellingPrice, id: p.id });
         }
       }
     }
@@ -87,8 +91,8 @@ export function ProductSearch({
 
   useEffect(() => {
     setHighlight(0);
-    setShowQuickAdd(query.trim().length > 0 && groupedModels.length === 0);
-  }, [query, groupedModels.length]);
+    setShowQuickAdd(query.trim().length > 0 && searchResults.length === 0);
+  }, [query, searchResults.length]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -98,29 +102,33 @@ export function ProductSearch({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const addModelWithSize = (model: {
+  const addProductToBill = (item: {
     name: string;
     category: string;
     subcategory: string;
+    price: number;
     source: "catalogue" | "stocklog";
     sourceId: string;
     hsnCode?: string;
     gstPercentage?: number;
-  }, selectedSize: string, price: number) => {
+    defaultSize?: string;
+    defaultColor?: string;
+  }) => {
     onAddItem({
       id: uuidv4(),
-      name: model.name,
-      size: selectedSize,
-      variant: selectedSize,
-      subcategory: model.subcategory,
-      category: model.category,
+      name: item.name,
+      size: item.defaultSize || "30\"",
+      color: item.defaultColor || "Black",
+      variant: item.defaultSize || undefined,
+      subcategory: item.subcategory,
+      category: item.category,
       quantity: 1,
-      unitPrice: price,
-      lineTotal: price,
-      source: model.source,
-      sourceId: model.sourceId,
-      hsnCode: model.hsnCode,
-      gstPercentage: model.gstPercentage,
+      unitPrice: item.price,
+      lineTotal: item.price,
+      source: item.source,
+      sourceId: item.sourceId,
+      hsnCode: item.hsnCode,
+      gstPercentage: item.gstPercentage,
     });
     setQuery("");
     setOpen(false);
@@ -131,8 +139,9 @@ export function ProductSearch({
     onAddItem({
       id: uuidv4(),
       name: item.name,
-      size: item.size || item.variant,
-      variant: item.variant || item.size,
+      size: item.size || undefined,
+      color: item.color || undefined,
+      variant: item.size || undefined,
       subcategory: item.subcategory,
       category: item.category,
       quantity: item.quantity,
@@ -152,7 +161,7 @@ export function ProductSearch({
     <div ref={containerRef} className="relative">
       <Input
         label="Search products"
-        placeholder="Type model name (e.g. Discovery, Phantom, Tactical)..."
+        placeholder="Type model name (e.g. Discovery, Phantom, Tactical, Tshirt)..."
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -160,47 +169,32 @@ export function ProductSearch({
         }}
         onFocus={() => setOpen(true)}
       />
-      {open && query.trim() && groupedModels.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-xl max-h-96 overflow-y-auto p-2 divide-y divide-stone-100">
-          {groupedModels.map((m) => (
-            <div key={m.name} className="py-2.5 px-3 hover:bg-stone-50/80 transition-colors">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-stone-900 text-base">{m.name}</span>
-                  <span className="ml-2 text-xs font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
-                    {m.subcategory}
-                  </span>
-                </div>
+      {open && query.trim() && searchResults.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-stone-200 bg-white shadow-xl max-h-80 overflow-y-auto divide-y divide-stone-100">
+          {searchResults.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between py-3 px-4 hover:bg-stone-50 transition-colors cursor-pointer"
+              onClick={() => addProductToBill(item)}
+            >
+              <div>
+                <span className="font-bold text-stone-900 text-base">{item.name}</span>
+                <span className="ml-2.5 text-xs font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
+                  {item.subcategory}
+                </span>
               </div>
-
-              {/* Vertically Scrollable Size Menu for Model */}
-              <div className="mt-2">
-                <p className="text-[11px] font-semibold text-stone-600 uppercase tracking-wider mb-1">
-                  Select Size to Add:
-                </p>
-                <div className="max-h-32 overflow-y-auto p-1.5 bg-stone-100/60 rounded-md border border-stone-200 grid grid-cols-4 sm:grid-cols-6 gap-1.5">
-                  {m.variants.length > 0 ? (
-                    m.variants.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => addModelWithSize(m, v.size, v.price)}
-                        className="flex flex-col items-center justify-center p-1.5 rounded border border-stone-300 bg-white hover:bg-summit-600 hover:text-white hover:border-summit-700 transition-all font-medium text-xs shadow-xs hover:scale-105 group"
-                      >
-                        <span className="font-bold text-stone-900 group-hover:text-white">{v.size}</span>
-                        <span className="text-[10px] text-stone-500 group-hover:text-amber-200 font-semibold">₹{v.price}</span>
-                      </button>
-                    ))
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => addModelWithSize(m, "-", 1500)}
-                      className="px-3 py-1 bg-summit-600 text-white rounded text-xs col-span-full"
-                    >
-                      + Add Item
-                    </button>
-                  )}
-                </div>
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-stone-900 text-sm">₹{item.price}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addProductToBill(item);
+                  }}
+                  className="rounded-md bg-summit-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-summit-700 active:bg-summit-800 transition-colors shadow-xs"
+                >
+                  + Add to Bill
+                </button>
               </div>
             </div>
           ))}

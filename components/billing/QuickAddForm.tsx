@@ -23,6 +23,7 @@ export interface QuickAddResult {
   gstPercentage: number;
   hsnCode?: string;
   size?: string;
+  color?: string;
   variant?: string;
 }
 
