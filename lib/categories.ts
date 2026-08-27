@@ -49,6 +49,7 @@ export const CATEGORIES: CategoryConfig[] = [
     name: "Hiking Gears",
     subcategories: [
       "Hiking Pants",
+      "Tshirt",
       "Winter Jackets",
       "Hiking Shoes",
       "Accessories",

@@ -1,20 +1,49 @@
 import { supabase } from "@/lib/supabase";
 import type { Product } from "@/types";
 
+function encodeVariant(size?: string, color?: string, fallbackVariant?: string): string | null {
+  if (size || color) {
+    return JSON.stringify({ size: size || null, color: color || null });
+  }
+  return fallbackVariant ?? null;
+}
+
+function decodeVariant(rawVariant?: string | null): { size?: string; color?: string; variant?: string } {
+  if (!rawVariant) return {};
+  if (typeof rawVariant === "string" && rawVariant.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(rawVariant);
+      const s = parsed.size || undefined;
+      const c = parsed.color || undefined;
+      return {
+        size: s,
+        color: c,
+        variant: s || c ? [c, s].filter(Boolean).join(" / ") : undefined,
+      };
+    } catch {
+      // ignore json parse error and fallback
+    }
+  }
+  return {
+    size: rawVariant || undefined,
+    color: undefined,
+    variant: rawVariant || undefined,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Mapper: DB row (snake_case) → TypeScript Product (camelCase)
 // ---------------------------------------------------------------------------
 function toProduct(row: Record<string, unknown>): Product {
-  const size = (row.size as string) ?? (row.variant as string) ?? undefined;
-  const color = (row.color as string) ?? undefined;
+  const decoded = decodeVariant(row.variant as string);
   return {
     id: row.id as string,
     name: row.name as string,
     category: row.category as string,
     subcategory: row.subcategory as string,
-    size: size,
-    color: color,
-    variant: size || color ? [color, size].filter(Boolean).join(" / ") : undefined,
+    size: decoded.size,
+    color: decoded.color,
+    variant: decoded.variant,
     sellingPrice: row.selling_price as number,
     stockQuantity: row.stock_quantity as number,
     lowStockThreshold: row.low_stock_threshold as number,
@@ -35,9 +64,9 @@ function toDbFields(
   if (input.name !== undefined) map.name = input.name;
   if (input.category !== undefined) map.category = input.category;
   if (input.subcategory !== undefined) map.subcategory = input.subcategory;
-  if (input.size !== undefined) map.size = input.size;
-  if (input.color !== undefined) map.color = input.color;
-  if (input.variant !== undefined) map.variant = input.variant;
+  if (input.size !== undefined || input.color !== undefined || input.variant !== undefined) {
+    map.variant = encodeVariant(input.size, input.color, input.variant);
+  }
   if (input.sellingPrice !== undefined) map.selling_price = input.sellingPrice;
   if (input.stockQuantity !== undefined) map.stock_quantity = input.stockQuantity;
   if (input.lowStockThreshold !== undefined)
@@ -72,9 +101,7 @@ export async function addProduct(
       name: input.name,
       category: input.category,
       subcategory: input.subcategory,
-      size: input.size ?? null,
-      color: input.color ?? null,
-      variant: input.variant ?? input.size ?? null,
+      variant: encodeVariant(input.size, input.color, input.variant),
       selling_price: input.sellingPrice,
       stock_quantity: input.stockQuantity,
       low_stock_threshold: input.lowStockThreshold ?? 2,
