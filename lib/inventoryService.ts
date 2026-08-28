@@ -199,6 +199,11 @@ export async function deleteProduct(id: string): Promise<boolean> {
   return (data ?? []).length > 0;
 }
 
+function normalizeString(str?: string | null): string {
+  if (!str) return "";
+  return str.toString().toLowerCase().replace(/["'\s]/g, "").trim();
+}
+
 export async function reduceStockForSale(
   items: {
     sourceId?: string;
@@ -214,31 +219,46 @@ export async function reduceStockForSale(
   for (const item of items) {
     let targetProduct: Product | undefined;
 
+    const normItemSize = normalizeString(item.size);
+    const normItemColor = normalizeString(item.color);
+    const normItemName = normalizeString(item.name).replace(/-\d+.*$/, "");
+
     // 1. Match by sourceId first if available
     if (item.sourceId) {
       targetProduct = allProducts.find((p) => p.id === item.sourceId);
     }
 
-    // 2. If not matched by sourceId or if size/color were changed, match by Name, Size, and Color
+    // 2. If sourceId doesn't match current size/color, search all products by normalized name, size & color
     if (item.name) {
-      const cleanName = item.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").trim();
       const matchedByName = allProducts.filter((p) => {
-        const pName = p.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").trim();
-        return pName.includes(cleanName) || cleanName.includes(pName);
+        const normPName = normalizeString(p.name).replace(/-\d+.*$/, "");
+        return normPName.includes(normItemName) || normItemName.includes(normPName);
       });
 
       if (matchedByName.length > 0) {
-        // Find best match with matching size & color
-        const exactMatch = matchedByName.find((p) => {
-          const sizeMatch = !item.size || p.size === item.size;
-          const colorMatch = !item.color || p.color === item.color;
-          return sizeMatch && colorMatch;
+        // Match exact normalized size AND color
+        const exactSizeAndColorMatch = matchedByName.find((p) => {
+          const pSize = normalizeString(p.size);
+          const pColor = normalizeString(p.color);
+          const sizeOk = !normItemSize || pSize === normItemSize;
+          const colorOk = !normItemColor || pColor === normItemColor;
+          return sizeOk && colorOk;
         });
 
-        if (exactMatch) {
-          targetProduct = exactMatch;
-        } else if (!targetProduct) {
-          targetProduct = matchedByName[0];
+        if (exactSizeAndColorMatch) {
+          targetProduct = exactSizeAndColorMatch;
+        } else {
+          // Match exact normalized size
+          const exactSizeMatch = matchedByName.find((p) => {
+            const pSize = normalizeString(p.size);
+            return normItemSize && pSize === normItemSize;
+          });
+
+          if (exactSizeMatch) {
+            targetProduct = exactSizeMatch;
+          } else if (!targetProduct) {
+            targetProduct = matchedByName[0];
+          }
         }
       }
     }

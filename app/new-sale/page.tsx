@@ -118,12 +118,28 @@ export default function NewSalePage() {
     setItems((prev) =>
       prev.map((i) => {
         if (i.id !== id) return i;
+        const normSize = newSize.toLowerCase().replace(/["'\s]/g, "");
+        const normColor = (i.color || "").toLowerCase().replace(/["'\s]/g, "");
+        const normName = i.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").replace(/["'\s]/g, "");
+
+        const matched = catalogue.find((p) => {
+          const pName = p.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").replace(/["'\s]/g, "");
+          const pSize = (p.size || "").toLowerCase().replace(/["'\s]/g, "");
+          const pColor = (p.color || "").toLowerCase().replace(/["'\s]/g, "");
+          const nameOk = pName.includes(normName) || normName.includes(pName);
+          const sizeOk = !normSize || pSize === normSize;
+          const colorOk = !normColor || pColor === normColor;
+          return nameOk && sizeOk && colorOk;
+        });
+
         const autoPrice = getAutoPrice(i.category, i.subcategory, i.name, newSize);
-        const newUnitPrice = autoPrice !== undefined ? autoPrice : i.unitPrice;
+        const newUnitPrice = matched ? matched.sellingPrice : (autoPrice !== undefined ? autoPrice : i.unitPrice);
+
         return {
           ...i,
           size: newSize,
           variant: newSize,
+          sourceId: matched ? matched.id : i.sourceId,
           unitPrice: newUnitPrice,
           lineTotal: newUnitPrice * i.quantity,
         };
@@ -133,9 +149,30 @@ export default function NewSalePage() {
 
   const updateColor = (id: string, newColor: string) => {
     setItems((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, color: newColor } : i
-      )
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const normSize = (i.size || "").toLowerCase().replace(/["'\s]/g, "");
+        const normColor = newColor.toLowerCase().replace(/["'\s]/g, "");
+        const normName = i.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").replace(/["'\s]/g, "");
+
+        const matched = catalogue.find((p) => {
+          const pName = p.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").replace(/["'\s]/g, "");
+          const pSize = (p.size || "").toLowerCase().replace(/["'\s]/g, "");
+          const pColor = (p.color || "").toLowerCase().replace(/["'\s]/g, "");
+          const nameOk = pName.includes(normName) || normName.includes(pName);
+          const sizeOk = !normSize || pSize === normSize;
+          const colorOk = !normColor || pColor === normColor;
+          return nameOk && sizeOk && colorOk;
+        });
+
+        return {
+          ...i,
+          color: newColor,
+          sourceId: matched ? matched.id : i.sourceId,
+          unitPrice: matched ? matched.sellingPrice : i.unitPrice,
+          lineTotal: (matched ? matched.sellingPrice : i.unitPrice) * i.quantity,
+        };
+      })
     );
   };
 
