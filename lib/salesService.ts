@@ -185,8 +185,11 @@ export async function completeSale(
 
   // Reduce catalogue stock
   await reduceStockForSale(
-    billItems.map((i) => ({
+    payload.items.map((i) => ({
       sourceId: i.sourceId,
+      name: i.name,
+      size: i.size,
+      color: i.color,
       quantity: i.quantity,
       source: i.source,
     }))

@@ -200,30 +200,55 @@ export async function deleteProduct(id: string): Promise<boolean> {
 }
 
 export async function reduceStockForSale(
-  items: { sourceId?: string; quantity: number; source: string }[]
+  items: {
+    sourceId?: string;
+    name?: string;
+    size?: string;
+    color?: string;
+    quantity: number;
+    source: string;
+  }[]
 ): Promise<void> {
+  const allProducts = await getAllProducts();
+
   for (const item of items) {
-    if (item.source !== "catalogue" || !item.sourceId) continue;
+    let targetProduct: Product | undefined;
 
-    // Fetch current stock
-    const { data: existing, error: fetchError } = await supabase
-      .from("products")
-      .select("stock_quantity")
-      .eq("id", item.sourceId)
-      .single();
-
-    if (fetchError) {
-      // Product not found — skip silently (same behaviour as original)
-      if (fetchError.code === "PGRST116") continue;
-      throw new Error(
-        `Failed to fetch product ${item.sourceId} for stock reduction: ${fetchError.message}`
-      );
+    // 1. Match by sourceId first if available
+    if (item.sourceId) {
+      targetProduct = allProducts.find((p) => p.id === item.sourceId);
     }
 
-    const newQuantity = Math.max(
-      0,
-      (existing.stock_quantity as number) - item.quantity
-    );
+    // 2. If not matched by sourceId or if size/color were changed, match by Name, Size, and Color
+    if (item.name) {
+      const cleanName = item.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").trim();
+      const matchedByName = allProducts.filter((p) => {
+        const pName = p.name.toLowerCase().replace(/\s*-\s*\d+.*$/i, "").trim();
+        return pName.includes(cleanName) || cleanName.includes(pName);
+      });
+
+      if (matchedByName.length > 0) {
+        // Find best match with matching size & color
+        const exactMatch = matchedByName.find((p) => {
+          const sizeMatch = !item.size || p.size === item.size;
+          const colorMatch = !item.color || p.color === item.color;
+          return sizeMatch && colorMatch;
+        });
+
+        if (exactMatch) {
+          targetProduct = exactMatch;
+        } else if (!targetProduct) {
+          targetProduct = matchedByName[0];
+        }
+      }
+    }
+
+    if (!targetProduct) {
+      console.warn(`Product not found in stock for deduction: ${item.name}`);
+      continue;
+    }
+
+    const newQuantity = Math.max(0, targetProduct.stockQuantity - item.quantity);
 
     const { error: updateError } = await supabase
       .from("products")
@@ -231,11 +256,11 @@ export async function reduceStockForSale(
         stock_quantity: newQuantity,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", item.sourceId);
+      .eq("id", targetProduct.id);
 
     if (updateError) {
       throw new Error(
-        `Failed to reduce stock for product ${item.sourceId}: ${updateError.message}`
+        `Failed to reduce stock for product ${targetProduct.id}: ${updateError.message}`
       );
     }
   }
