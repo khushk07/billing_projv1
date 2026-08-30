@@ -12,6 +12,22 @@ function escapeCsvField(value: string | number): string {
 }
 
 /**
+ * Triggers a browser download of a JSON object.
+ * @param filename - Download filename
+ * @param data - Any JSON-serializable object
+ */
+export function downloadJson(filename: string, data: unknown): void {
+  const jsonStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
  * Builds CSV content from headers and rows, triggers browser download.
  * @param filename - Download filename
  * @param headers - Column headers

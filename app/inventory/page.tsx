@@ -14,6 +14,8 @@ import { StockLogTable } from "@/components/inventory/StockLogTable";
 import { BulkImport } from "@/components/inventory/BulkImport";
 import { PromoteModal } from "@/components/inventory/PromoteModal";
 import { CATEGORIES, getSubcategories } from "@/lib/categories";
+import { downloadCsv, downloadJson } from "@/lib/csvExporter";
+import { format } from "date-fns";
 import type { Product, StockLogItem } from "@/types";
 
 export default function InventoryPage() {
@@ -30,6 +32,7 @@ export default function InventoryPage() {
   const [restockQty, setRestockQty] = useState("");
   const [promoteEntry, setPromoteEntry] = useState<StockLogItem | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
 
   const loadProducts = useCallback(async () => {
     const res = await fetch("/api/inventory");
@@ -47,6 +50,56 @@ export default function InventoryPage() {
     loadProducts();
     loadStockLog();
   }, [loadProducts, loadStockLog]);
+
+  const handleExportCsv = () => {
+    const dateStr = format(new Date(), "yyyy-MM-dd");
+    downloadCsv(
+      `summit-gear-inventory-${dateStr}.csv`,
+      ["ID", "Name", "Category", "Subcategory", "Size", "Colour", "Price", "Stock Quantity", "Low Stock Threshold", "HSN Code", "GST %"],
+      products.map((p) => [
+        p.id,
+        p.name,
+        p.category,
+        p.subcategory,
+        p.size || p.variant || "N/A",
+        p.color || "N/A",
+        p.sellingPrice,
+        p.stockQuantity,
+        p.lowStockThreshold,
+        p.hsnCode || "",
+        p.gstPercentage || 0,
+      ])
+    );
+  };
+
+  const handleExportFullBackup = async () => {
+    setBackingUp(true);
+    try {
+      const [invRes, custRes, salesRes] = await Promise.all([
+        fetch("/api/inventory"),
+        fetch("/api/customers"),
+        fetch("/api/sales"),
+      ]);
+      const [invJson, custJson, salesJson] = await Promise.all([
+        invRes.json(),
+        custRes.json(),
+        salesRes.json(),
+      ]);
+
+      const backupData = {
+        exportedAt: new Date().toISOString(),
+        version: "1.0",
+        inventory: invJson.data || products,
+        customers: custJson.data || [],
+        sales: salesJson.data || [],
+      };
+
+      const dateStr = format(new Date(), "yyyy-MM-dd_HHmm");
+      downloadJson(`summit-gear-full-backup-${dateStr}.json`, backupData);
+    } finally {
+      setBackingUp(false);
+    }
+  };
 
   const handleAddProduct = async (data: Record<string, unknown>) => {
     await fetch("/api/inventory", {
@@ -146,7 +199,31 @@ export default function InventoryPage() {
 
   return (
     <div>
-      <PageHeader title="Inventory" subtitle="Manage catalogue, quick filters and stock levels" />
+      <PageHeader
+        title="Inventory"
+        subtitle="Manage catalogue, quick filters and stock levels"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExportCsv}
+              disabled={products.length === 0}
+            >
+              Export CSV
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExportFullBackup}
+              disabled={backingUp}
+              className="border-summit-300 text-summit-700 hover:bg-summit-50"
+            >
+              {backingUp ? "Generating Backup…" : "Backup All Data (Offline)"}
+            </Button>
+          </div>
+        }
+      />
       <Tabs tabs={tabs} activeTab={tab} onChange={setTab} />
 
       <div className="mt-6">
