@@ -20,8 +20,10 @@ export default function InventoryPage() {
   const [tab, setTab] = useState("catalogue");
   const [products, setProducts] = useState<Product[]>([]);
   const [stockLog, setStockLog] = useState<StockLogItem[]>([]);
+  const [searchFilter, setSearchFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [subcategoryFilter, setSubcategoryFilter] = useState("");
+  const [stockStatusFilter, setStockStatusFilter] = useState<"all" | "in_stock" | "low_stock" | "out_of_stock">("all");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [duplicateProduct, setDuplicateProduct] = useState<Product | null>(null);
   const [restockProduct, setRestockProduct] = useState<Product | null>(null);
@@ -77,6 +79,20 @@ export default function InventoryPage() {
     loadProducts();
   };
 
+  const handleQuickStockChange = async (product: Product, newQuantity: number) => {
+    // Optimistic UI update for instant feedback
+    setProducts((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, stockQuantity: newQuantity } : p))
+    );
+
+    await fetch("/api/inventory", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: product.id, stockQuantity: newQuantity }),
+    });
+    loadProducts();
+  };
+
   const handleRestock = async () => {
     if (!restockProduct) return;
     await fetch("/api/inventory", {
@@ -122,52 +138,150 @@ export default function InventoryPage() {
     { id: "stocklog", label: "Stock Log" },
   ];
 
+  // Quick stats for filter badges
+  const totalCount = products.length;
+  const inStockCount = products.filter((p) => p.stockQuantity > 0).length;
+  const lowStockCount = products.filter((p) => p.stockQuantity > 0 && p.stockQuantity <= p.lowStockThreshold).length;
+  const outOfStockCount = products.filter((p) => p.stockQuantity === 0).length;
+
   return (
     <div>
-      <PageHeader title="Inventory" subtitle="Manage catalogue and quick stock log" />
+      <PageHeader title="Inventory" subtitle="Manage catalogue, quick filters and stock levels" />
       <Tabs tabs={tabs} activeTab={tab} onChange={setTab} />
 
       <div className="mt-6">
         {tab === "catalogue" && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-4">
-              <Select
-                label="Category"
-                value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setSubcategoryFilter("");
-                }}
-                options={[
-                  { value: "", label: "All" },
-                  ...CATEGORIES.map((c) => ({ value: c.name, label: c.name })),
-                ]}
-              />
-              <Select
-                label="Subcategory"
-                value={subcategoryFilter}
-                onChange={(e) => setSubcategoryFilter(e.target.value)}
-                options={[
-                  { value: "", label: "All" },
-                  ...getSubcategories(categoryFilter).map((s) => ({
-                    value: s,
-                    label: s,
-                  })),
-                ]}
-                disabled={!categoryFilter}
-              />
-              <div className="flex items-end">
-                <Button onClick={() => setShowAddProduct(true)}>Add Product</Button>
+          <div className="space-y-5">
+            {/* Search & Main Filter Controls */}
+            <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs space-y-4">
+              <div className="grid gap-3 sm:grid-cols-12 items-end">
+                {/* Search Bar */}
+                <div className="sm:col-span-4">
+                  <Input
+                    label="Search Products"
+                    placeholder="Search by name, model, size (34), or colour..."
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                  />
+                </div>
+
+                {/* Category Selector */}
+                <div className="sm:col-span-3">
+                  <Select
+                    label="Category"
+                    value={categoryFilter}
+                    onChange={(e) => {
+                      setCategoryFilter(e.target.value);
+                      setSubcategoryFilter("");
+                    }}
+                    options={[
+                      { value: "", label: "All Categories" },
+                      ...CATEGORIES.map((c) => ({ value: c.name, label: c.name })),
+                    ]}
+                  />
+                </div>
+
+                {/* Subcategory Selector */}
+                <div className="sm:col-span-3">
+                  <Select
+                    label="Subcategory"
+                    value={subcategoryFilter}
+                    onChange={(e) => setSubcategoryFilter(e.target.value)}
+                    options={[
+                      { value: "", label: "All Subcategories" },
+                      ...getSubcategories(categoryFilter).map((s) => ({
+                        value: s,
+                        label: s,
+                      })),
+                    ]}
+                    disabled={!categoryFilter}
+                  />
+                </div>
+
+                {/* Add Product Button */}
+                <div className="sm:col-span-2 flex justify-end">
+                  <Button onClick={() => setShowAddProduct(true)} className="w-full sm:w-auto">
+                    + Add Product
+                  </Button>
+                </div>
+              </div>
+
+              {/* Status Filter Chips */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-stone-100">
+                <span className="text-xs font-semibold text-stone-500 mr-1">Status:</span>
+                <button
+                  type="button"
+                  onClick={() => setStockStatusFilter("all")}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    stockStatusFilter === "all"
+                      ? "bg-summit-600 text-white shadow-xs"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  }`}
+                >
+                  All ({totalCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStockStatusFilter("in_stock")}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    stockStatusFilter === "in_stock"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                  }`}
+                >
+                  In Stock ({inStockCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStockStatusFilter("low_stock")}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    stockStatusFilter === "low_stock"
+                      ? "bg-amber-600 text-white shadow-xs"
+                      : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
+                  }`}
+                >
+                  Low Stock ({lowStockCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStockStatusFilter("out_of_stock")}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    stockStatusFilter === "out_of_stock"
+                      ? "bg-red-600 text-white shadow-xs"
+                      : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                  }`}
+                >
+                  Out of Stock ({outOfStockCount})
+                </button>
+
+                {(searchFilter || categoryFilter || subcategoryFilter || stockStatusFilter !== "all") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchFilter("");
+                      setCategoryFilter("");
+                      setSubcategoryFilter("");
+                      setStockStatusFilter("all");
+                    }}
+                    className="ml-auto text-xs text-summit-700 hover:text-summit-800 font-medium underline"
+                  >
+                    Reset Filters
+                  </button>
+                )}
               </div>
             </div>
+
             <ProductTable
               products={products}
               categoryFilter={categoryFilter}
               subcategoryFilter={subcategoryFilter}
+              searchFilter={searchFilter}
+              stockStatusFilter={stockStatusFilter}
               onEdit={setEditProduct}
               onDuplicate={setDuplicateProduct}
               onRestock={setRestockProduct}
               onDelete={handleDelete}
+              onQuickStockChange={handleQuickStockChange}
             />
           </div>
         )}
