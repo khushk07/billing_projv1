@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LowStockAlert } from "@/components/dashboard/LowStockAlert";
 import { RecentSales } from "@/components/dashboard/RecentSales";
-import type { DashboardStats } from "@/types";
+import { downloadTaxSummaryCsv } from "@/lib/csvExporter";
+import type { DashboardStats, Sale } from "@/types";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [downloadingTax, setDownloadingTax] = useState(false);
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -20,15 +22,39 @@ export default function DashboardPage() {
       });
   }, []);
 
+  const handleDownloadTaxSummary = async () => {
+    setDownloadingTax(true);
+    try {
+      const res = await fetch("/api/sales");
+      const json = await res.json();
+      if (json.success && json.data) {
+        downloadTaxSummaryCsv(json.data as Sale[]);
+      }
+    } finally {
+      setDownloadingTax(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader
         title="Dashboard"
-        subtitle="Today's overview"
+        subtitle="Today's overview & quick reports"
         action={
-          <Link href="/new-sale">
-            <Button size="lg">+ New Sale</Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleDownloadTaxSummary}
+              disabled={downloadingTax}
+              className="border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+            >
+              {downloadingTax ? "Generating Tax Summary…" : "Download Tax Summary"}
+            </Button>
+            <Link href="/new-sale">
+              <Button size="lg">+ New Sale</Button>
+            </Link>
+          </div>
         }
       />
       {!stats ? (
